@@ -20,8 +20,8 @@ jobs:
 
       - name: check current path
         run: |
-          ls -al ~/terraform
-          ls -al ~/ansible
+          ls -al ./terraform
+          ls -al ./ansible
 
       # - name: Install Terraform
       #   uses: hashicorp/setup-terraform@v2
