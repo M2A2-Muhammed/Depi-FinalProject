@@ -9,6 +9,7 @@ env:
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   SSH_PRIVATE_KEY_PATH: "~/.ssh/id_rsa"
   SSH_PUBLIC_KEY_PATH: "~/.ssh/id_rsa.pub"
+  Terraform_Pub_Key_Path: "./terraform/id_rsa.pub"
 
 jobs:
   Deploy:
@@ -29,7 +30,7 @@ jobs:
         run: |
           ssh-keygen -t rsa -b 4096 -f ${{ env.SSH_PRIVATE_KEY_PATH }} -C "mu@depi.com"
           chmod 600 ${{ env.SSH_PRIVATE_KEY_PATH }}
-          ls ~/.ssh/
+          export SSH_PRIVATE_PATH=${{ env.SSH_PRIVATE_KEY_PATH }}
 
       - name: Terraform Init
         run: |
@@ -38,10 +39,12 @@ jobs:
 
       - name: Terraform Apply (manual approval)
         run: |
+          cp ${{ env.SSH_PUBLIC_KEY_PATH }} ${{ env.Terraform_Pub_Key_Path }}
           cd ./terraform
+          ls -al
           sudo terraform apply -var="aws_access_key_id=${{ env.AWS_ACCESS_KEY_ID }}" \
                           -var="aws_secret_access_key=${{ env.AWS_SECRET_ACCESS_KEY }}" \
-                          -var="key_path=${{ env.SSH_PUBLIC_KEY_PATH }}"
+                          -var="key_path=${{ env.Terraform_Pub_Key_Path }}"
                           -auto-approve
 
       - name: Save Terraform Outputs
