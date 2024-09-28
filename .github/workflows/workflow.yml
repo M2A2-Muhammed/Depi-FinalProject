@@ -17,23 +17,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v2
+
       - name: Install dependencies
         run: |
-          sudo apt-get update && sudo apt-get install -y openssh-server terraform ansible
+          sudo apt-get update && sudo apt-get install -y openssh-server ansible
 
       - name: Generate SSH key
         run: |
           ssh-keygen -t rsa -b 4096 -f ${{ env.SSH_PRIVATE_KEY_PATH }} -C "mu@depi.com"
           chmod 600 ${{ env.SSH_PRIVATE_KEY_PATH }}
 
-      - name: Copy Terraform and Ansible files
-        run: |
-          mkdir -p terraform ansible
-          cp -r ./terraform/* terraform/
-          cp -r ./ansible/* ansible/
-
       - name: Terraform Init
-        run: terraform init
+        run: |
+          cd ~/terraform && terraform init
 
       - name: Terraform Apply (manual approval)
         run: |
@@ -59,4 +57,4 @@ jobs:
 
       - name: Run Ansible playbook
         run: |
-          ansible-playbook -i ansible/hosts ansible/main.yml
+          cd ~/ansible && ansible-playbook -i ansible/hosts ansible/main.yml
