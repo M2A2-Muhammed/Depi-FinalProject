@@ -9,7 +9,6 @@ env:
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   SSH_PRIVATE_KEY_PATH: "~/.ssh/id_rsa"
   SSH_PUBLIC_KEY_PATH: "~/.ssh/id_rsa.pub"
-  Terraform_Pub_Key_Path: "./terraform/id_rsa.pub"
 
 jobs:
   Deploy:
@@ -39,19 +38,19 @@ jobs:
 
       - name: Terraform Apply (manual approval)
         run: |
-          cp ${{ env.SSH_PUBLIC_KEY_PATH }} ${{ env.Terraform_Pub_Key_Path }}
           cd ./terraform
-          ls -al
           sudo terraform apply -var="aws_access_key_id=${{ env.AWS_ACCESS_KEY_ID }}" \
                           -var="aws_secret_access_key=${{ env.AWS_SECRET_ACCESS_KEY }}" \
-                          -var="key_path=${{ env.Terraform_Pub_Key_Path }}"
                           -auto-approve
 
       - name: Save Terraform Outputs
         run: |
           cd ./terraform
           export EC2_PUBLIC_IP=$(lookup 'terraform' 'state=./terraform/terraform.tfstate' 'output.ec2_info.value.public_ip')
+          export EC2_USER_NAME=$(lookup 'terraform' 'state=./terraform/terraform.tfstate' 'output.ec2_info.value.user_name')
           echo "EC2_PUBLIC_IP=$EC2_PUBLIC_IP"
+          echo "EC2_USER_NAME=$EC2_USER_NAME"
+          scp ${{ env.SSH_PUBLIC_KEY_PATH }} $depi@$EC2_PUBLIC_IP:~/.ssh/authorized_keys
 
       - name: Run Ansible playbook
         run: |

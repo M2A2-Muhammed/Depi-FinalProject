@@ -40,20 +40,40 @@ resource "aws_route_table_association" "main" {
   route_table_id = aws_route_table.main.id
 }
 
-resource "aws_key_pair" "my_key" {
-  key_name     = var.key_name
-  public_key    = file(var.key_path)
-}
-
+data "aws_caller_identity" "current" {}
 
 # Create an EC2 instance
 resource "aws_instance" "web" {
   ami           = var.ami
   instance_type = var.instance_type
   subnet_id     = aws_subnet.public.id
-  key_name     = var.key_name
-
+  
   tags = {
     Name = "My EC2 Instance"
   }
+
+  user_data = <<-EOF
+    #!/bin/bash
+
+    # Update package lists
+    sudo apt-get update
+
+    # Install necessary packages
+    sudo apt-get install -y openssh-server
+
+    # Create a custom user
+    sudo useradd depi
+
+    # Create a directory for the user
+    sudo mkdir -p /home/depi/mydir
+
+    # Grant permissions to the user
+    sudo chown depi:depi /home/depi/mydir
+
+    # Set the user's password (replace 'mypassword' with a strong password)
+    echo "depi:depi" | sudo chpasswd
+
+    # Add the user to the sudoers group
+    sudo usermod -aG sudo depi
+  EOF
 }
