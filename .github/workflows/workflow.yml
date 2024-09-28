@@ -47,10 +47,8 @@ jobs:
         run: |
           cd ./terraform
           export EC2_PUBLIC_IP=$(lookup 'terraform' 'state=./terraform/terraform.tfstate' 'output.ec2_info.value.public_ip')
-          export EC2_USER_NAME=$(lookup 'terraform' 'state=./terraform/terraform.tfstate' 'output.ec2_info.value.user_name')
           echo "EC2_PUBLIC_IP=$EC2_PUBLIC_IP"
-          echo "EC2_USER_NAME=$EC2_USER_NAME"
-          scp ${{ env.SSH_PUBLIC_KEY_PATH }} $depi@$EC2_PUBLIC_IP:~/.ssh/authorized_keys
+          scp ${{ env.SSH_PUBLIC_KEY_PATH }} depi@$EC2_PUBLIC_IP:~/.ssh/authorized_keys
 
       - name: Run Ansible playbook
         run: |
