@@ -32,7 +32,8 @@ jobs:
 
       - name: Terraform Init
         run: |
-          cd ./terraform && terraform init
+          cd ./terraform 
+          terraform init
 
       - name: Terraform Apply (manual approval)
         run: |
