@@ -1,0 +1,44 @@
+# monitoring.yml
+
+---
+- hosts: ec2_instances
+  become: true
+  gather_facts: false
+
+  vars:
+      ec2_user: "{{ lookup('env', 'EC2_USER') }}"
+      ec2_publicIP: "{{ lookup('env', 'EC2_PUBLIC_IP') }}"
+      ssh_private_key_path: "{{ lookup('env', 'SSH_PRIVATE_PATH') }}"
+
+  tasks:
+    - name: Update package lists
+      apt: update
+
+    - name: Install required packages
+      apt:
+        pkg:
+          - prometheus
+          - grafana
+        state: present
+
+    - name: Generate Prometheus configuration
+      template:
+        src: prometheus.yml.j2
+        dest: /etc/prometheus/prometheus.yml
+        mode: 0644
+
+    - name: Start Prometheus service
+      service:
+        name: prometheus
+        state: started
+
+    - name: Configure Grafana
+      template:
+        src: grafana.ini
+        dest: /etc/grafana/grafana.ini
+        mode: 0644
+
+    - name: Start Grafana service
+      service:
+        name: grafana-server
+        state: started
