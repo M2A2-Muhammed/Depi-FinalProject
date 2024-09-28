@@ -29,27 +29,28 @@ jobs:
         run: |
           ssh-keygen -t rsa -b 4096 -f ${{ env.SSH_PRIVATE_KEY_PATH }} -C "mu@depi.com"
           chmod 600 ${{ env.SSH_PRIVATE_KEY_PATH }}
+          ls ~/.ssh/
 
-      - name: Terraform Init
-        run: |
-          cd ./terraform 
-          terraform init
+      # - name: Terraform Init
+      #   run: |
+      #     cd ./terraform
+      #     terraform init
 
-      - name: Terraform Apply (manual approval)
-        run: |
-          cd ./terraform 
-          sudo terraform apply -var="aws_access_key_id=${{ env.AWS_ACCESS_KEY_ID }}" \
-                          -var="aws_secret_access_key=${{ env.AWS_SECRET_ACCESS_KEY }}" \
-                          -var="key_path=${{ env.SSH_PUBLIC_KEY_PATH }}"
-                          -auto-approve
+      # - name: Terraform Apply (manual approval)
+      #   run: |
+      #     cd ./terraform
+      #     sudo terraform apply -var="aws_access_key_id=${{ env.AWS_ACCESS_KEY_ID }}" \
+      #                     -var="aws_secret_access_key=${{ env.AWS_SECRET_ACCESS_KEY }}" \
+      #                     -var="key_path=${{ env.SSH_PUBLIC_KEY_PATH }}"
+      #                     -auto-approve
 
-      - name: Save Terraform Outputs
-        run: |
-          cd ./terraform
-          export EC2_PUBLIC_IP=$(lookup 'terraform' 'state=./terraform/terraform.tfstate' 'output.ec2_info.value.public_ip')
-          echo "EC2_PUBLIC_IP=$EC2_PUBLIC_IP"
+      # - name: Save Terraform Outputs
+      #   run: |
+      #     cd ./terraform
+      #     export EC2_PUBLIC_IP=$(lookup 'terraform' 'state=./terraform/terraform.tfstate' 'output.ec2_info.value.public_ip')
+      #     echo "EC2_PUBLIC_IP=$EC2_PUBLIC_IP"
 
-      - name: Run Ansible playbook
-        run: |
-          cd ./ansible 
-          ansible-playbook -i ansible/hosts ansible/main.yml
+      # - name: Run Ansible playbook
+      #   run: |
+      #     cd ./ansible
+      #     ansible-playbook -i ansible/hosts ansible/main.yml
