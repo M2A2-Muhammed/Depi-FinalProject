@@ -6,6 +6,6 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
-  - job_name: "{{ ec2_user }}:{{ ec2_publicIP }}"
+  - job_name: "{{ ec2_publicIP }}"
     static_configs:
       - targets: ["{{ ec2_publicIP }}:9090"]

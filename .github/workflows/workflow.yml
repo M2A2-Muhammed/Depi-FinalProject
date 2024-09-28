@@ -39,17 +39,13 @@ jobs:
         run: |
           cd ./terraform 
           terraform apply -var="aws_access_key_id=${{ env.AWS_ACCESS_KEY_ID }}" \
-                            -var="aws_secret_access_key=${{ env.AWS_SECRET_ACCESS_KEY }}" \
-                            -var="key_path=${{ env.SSH_PUBLIC_KEY_PATH }}"
+                          -var="aws_secret_access_key=${{ env.AWS_SECRET_ACCESS_KEY }}" \
+                          -var="key_path=${{ env.SSH_PUBLIC_KEY_PATH }}"
 
       - name: Save Terraform Outputs
         run: |
           cd ./terraform
-          terraform output -json | awk -F'"' '{print $4}' > ec2_user.txt
-          terraform output -json | awk -F'"' '{print $6}' > ec2_public_ip.txt
-          export EC2_USER=$(cat ec2_user.txt)
-          export EC2_PUBLIC_IP=$(cat ec2_public_ip.txt)
-          echo "EC2_USER=$EC2_USER"
+          export EC2_PUBLIC_IP=$(lookup 'terraform' 'state=./terraform/terraform.tfstate' 'output.ec2_info.value.public_ip')
           echo "EC2_PUBLIC_IP=$EC2_PUBLIC_IP"
 
       - name: Run Ansible playbook
