@@ -1,7 +1,8 @@
 name: DEPI Final Project
 
 on:
-  workflow_dispatch: {}
+  push:
+  workflow_dispatch:
 
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -17,44 +18,48 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install Terraform
-        uses: hashicorp/setup-terraform@v2
-
-      - name: Install dependencies
+      - name: check current path
         run: |
-          sudo apt-get update && sudo apt-get install -y openssh-server ansible
+          ls -al
 
-      - name: Generate SSH key
-        run: |
-          ssh-keygen -t rsa -b 4096 -f ${{ env.SSH_PRIVATE_KEY_PATH }} -C "mu@depi.com"
-          chmod 600 ${{ env.SSH_PRIVATE_KEY_PATH }}
+      # - name: Install Terraform
+      #   uses: hashicorp/setup-terraform@v2
 
-      - name: Terraform Init
-        run: |
-          cd ~/terraform && terraform init
+      # - name: Install dependencies
+      #   run: |
+      #     sudo apt-get update && sudo apt-get install -y openssh-server ansible
 
-      - name: Terraform Apply (manual approval)
-        run: |
-          echo "Terraform will now apply the changes. Are you sure you want to proceed? (yes/no)"
-          read -r response
-          if [[ "$response" == "yes" ]]; then
-            terraform apply -var="aws_access_key_id=${{ env.AWS_ACCESS_KEY_ID }}" \
-                             -var="aws_secret_access_key=${{ env.AWS_SECRET_ACCESS_KEY }}" \
-                             -var="key_path=${{ env.SSH_PUBLIC_KEY_PATH }}"
-          else
-            echo "Terraform apply canceled."
-            exit 1
-          fi
+      # - name: Generate SSH key
+      #   run: |
+      #     ssh-keygen -t rsa -b 4096 -f ${{ env.SSH_PRIVATE_KEY_PATH }} -C "mu@depi.com"
+      #     chmod 600 ${{ env.SSH_PRIVATE_KEY_PATH }}
 
-      - name: Save Terraform Outputs
-        run: |
-          terraform output -json | awk -F'"' '{print $4}' > ec2_user.txt
-          terraform output -json | awk -F'"' '{print $6}' > ec2_public_ip.txt
-          export EC2_USER=$(cat ec2_user.txt)
-          export EC2_PUBLIC_IP=$(cat ec2_public_ip.txt)
-          echo "EC2_USER=$EC2_USER"
-          echo "EC2_PUBLIC_IP=$EC2_PUBLIC_IP"
+      # - name: Terraform Init
+      #   run: |
+      #     cd ~/terraform && terraform init
 
-      - name: Run Ansible playbook
-        run: |
-          cd ~/ansible && ansible-playbook -i ansible/hosts ansible/main.yml
+      # - name: Terraform Apply (manual approval)
+      #   run: |
+      #     echo "Terraform will now apply the changes. Are you sure you want to proceed? (yes/no)"
+      #     read -r response
+      #     if [[ "$response" == "yes" ]]; then
+      #       terraform apply -var="aws_access_key_id=${{ env.AWS_ACCESS_KEY_ID }}" \
+      #                        -var="aws_secret_access_key=${{ env.AWS_SECRET_ACCESS_KEY }}" \
+      #                        -var="key_path=${{ env.SSH_PUBLIC_KEY_PATH }}"
+      #     else
+      #       echo "Terraform apply canceled."
+      #       exit 1
+      #     fi
+
+      # - name: Save Terraform Outputs
+      #   run: |
+      #     terraform output -json | awk -F'"' '{print $4}' > ec2_user.txt
+      #     terraform output -json | awk -F'"' '{print $6}' > ec2_public_ip.txt
+      #     export EC2_USER=$(cat ec2_user.txt)
+      #     export EC2_PUBLIC_IP=$(cat ec2_public_ip.txt)
+      #     echo "EC2_USER=$EC2_USER"
+      #     echo "EC2_PUBLIC_IP=$EC2_PUBLIC_IP"
+
+      # - name: Run Ansible playbook
+      #   run: |
+      #     cd ~/ansible && ansible-playbook -i ansible/hosts ansible/main.yml
