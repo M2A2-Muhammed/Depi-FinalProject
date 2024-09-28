@@ -36,16 +36,9 @@ jobs:
 
       - name: Terraform Apply (manual approval)
         run: |
-          echo "Terraform will now apply the changes. Are you sure you want to proceed? (yes/no)"
-          read -r response
-          if [[ "$response" == "yes" ]]; then
-            terraform apply -var="aws_access_key_id=${{ env.AWS_ACCESS_KEY_ID }}" \
-                             -var="aws_secret_access_key=${{ env.AWS_SECRET_ACCESS_KEY }}" \
-                             -var="key_path=${{ env.SSH_PUBLIC_KEY_PATH }}"
-          else
-            echo "Terraform apply canceled."
-            exit 1
-          fi
+          terraform apply -var="aws_access_key_id=${{ env.AWS_ACCESS_KEY_ID }}" \
+                            -var="aws_secret_access_key=${{ env.AWS_SECRET_ACCESS_KEY }}" \
+                            -var="key_path=${{ env.SSH_PUBLIC_KEY_PATH }}"
 
       - name: Save Terraform Outputs
         run: |
