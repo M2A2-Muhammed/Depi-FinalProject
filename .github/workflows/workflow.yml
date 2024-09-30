@@ -55,12 +55,6 @@ jobs:
                           -var="key_name_value=${{ env.SSH_PUBLIC_KEY }}" \
                           -var="aws_region=${{ env.AWS_REGION }}" \
                           -auto-approve
-          
-          # Save the public IP to an environment variable
-          export PUBLIC_IP=$(terraform output -raw public_ip)
-
-          # Use the variable
-          echo "The public IP is: $PUBLIC_IP"
 
       - name: Get Public IP
         id: Deploy
