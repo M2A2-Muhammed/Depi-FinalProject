@@ -24,12 +24,13 @@ jobs:
              mkdir ~/.ssh/
              sudo chmod 700 ~/.ssh/
              sudo touch ~/.ssh/id_aws_ec2 ~/.ssh/id_aws_ec2.pub
-             sudo chmod 600 ~/.ssh/id_aws_ec2
-             sudo chmod 644 ~/.ssh/id_aws_ec2.pub
              ls ~/.ssh/
              
              sudo echo "${{ env.SSH_PRIVATE_KEY }}" > ~/.ssh/id_aws_ec2
              sudo echo "${{ env.SSH_PUBLIC_KEY }}" > ~/.ssh/id_aws_ec2.pub
+
+             cat ~/.ssh/id_aws_ec2
+             cat ~/.ssh/id_aws_ec2.pub
 
       # - name: Set up AWS credentials
       #   uses: aws-actions/configure-aws-credentials@v1
