@@ -36,7 +36,7 @@ resource "aws_instance" "web-server" {
   ami             = var.ami
   instance_type   = var.instance_type
   key_name        = aws_key_pair.my_key_pair.key_name
-  security_groups = [ssh_security_group_id]
+  security_groups = [aws_security_group.allow_ssh.id]
 
   tags = {
     Name = "my-web"
