@@ -35,8 +35,8 @@ jobs:
 
       - name: Create Files for SSH keys
         run: |
-             echo "${{ env.SSH_PRIVATE_KEY }}" > .ssh/id_aws_ec2
-             echo "${{ env.SSH_PUBLIC_KEY }}" > .ssh/id_aws_ec2.pub
+             echo "${{ env.SSH_PRIVATE_KEY }}" > ~/.ssh/id_aws_ec2
+             echo "${{ env.SSH_PUBLIC_KEY }}" > ~/.ssh/id_aws_ec2.pub
 
       - name: Terraform Init
         run: |
