@@ -80,4 +80,5 @@ jobs:
               cd ./ansible
               echo "[ec2_hosts]" > hosts
               echo "ec2_host ansible_host=$EC2_PUBLIC_IP" >> hosts
+              cat hosts
               ansible-playbook -i hosts main.yml
