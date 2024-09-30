@@ -45,11 +45,7 @@ jobs:
       
       - name: Terraform Plan
         run: |
-          terraform plan -refresh \
-                          -var="aws_access_key_id=${{ env.AWS_ACCESS_KEY_ID }}" \
-                          -var="aws_secret_access_key=${{ env.AWS_SECRET_ACCESS_KEY }}" \
-                          -var="key_name_value=${{ env.SSH_PUBLIC_KEY }}" \
-                          -var="aws_region=${{ env.AWS_REGION }}"
+          terraform plan
 
       - name: Terraform Apply (manual approval)
         run: |
@@ -57,7 +53,7 @@ jobs:
                           -var="aws_secret_access_key=${{ env.AWS_SECRET_ACCESS_KEY }}" \
                           -var="key_name_value=${{ env.SSH_PUBLIC_KEY }}" \
                           -var="aws_region=${{ env.AWS_REGION }}" \
-                          -auto-approve
+                          -auto-approve -debug
 
       - name: Gather EC2 public IP
         run: |
