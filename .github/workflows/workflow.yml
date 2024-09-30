@@ -35,6 +35,7 @@ jobs:
 
       - name: Create Files for SSH keys
         run: |
+             touch ~/.ssh/id_aws_ec2 ~/.ssh/id_aws_ec2.pub
              echo "${{ env.SSH_PRIVATE_KEY }}" > ~/.ssh/id_aws_ec2
              echo "${{ env.SSH_PUBLIC_KEY }}" > ~/.ssh/id_aws_ec2.pub
 
