@@ -43,17 +43,16 @@ jobs:
         run: |
           cd ./terraform
           terraform init
-
-      - name: Terraform Apply (manual approval)
-        run: |
-          cd ./terraform
-          terraform refresh
-          terraform apply \
+          terraform-plan -refresh \
                           -var="aws_access_key_id=${{ env.AWS_ACCESS_KEY_ID }}" \
                           -var="aws_secret_access_key=${{ env.AWS_SECRET_ACCESS_KEY }}" \
                           -var="key_name_value=${{ env.SSH_PUBLIC_KEY }}" \
                           -var="aws_region=${{ env.AWS_REGION }}" \
-                          -auto-approve
+
+      - name: Terraform Apply (manual approval)
+        run: |
+          cd ./terraform
+          terraform apply -approve
 
       - name: Gather EC2 public IP
         run: |
