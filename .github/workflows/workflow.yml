@@ -59,9 +59,10 @@ jobs:
                           -auto-approve
 
       - name: Get Public IP
+        id: Deploy
         run: |
-            export PUBLIC_IP=$(terraform output -raw public_ip)
-            echo "PUBLIC_IP=$PUBLIC_IP"
+            PUBLIC_IP=$(terraform output -raw public_ip)
+            echo "PUBLIC_IP=${PUBLIC_IP}" >> $GITHUB_ENV
                   
       - name: Run Ansible playbook
         run: |
