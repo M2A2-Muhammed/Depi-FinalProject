@@ -52,7 +52,7 @@ jobs:
       - name: Terraform Apply (manual approval)
         run: |
           cd ./terraform
-          terraform apply -approve
+          terraform apply -auto-approve
 
       - name: Gather EC2 public IP
         run: |
