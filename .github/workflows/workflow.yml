@@ -49,7 +49,7 @@ jobs:
                           -var="aws_secret_access_key=${{ env.AWS_SECRET_ACCESS_KEY }}" \
                           -var="key_name_value=${{ env.SSH_PUBLIC_KEY }}" \
                           -var="aws_region=${{ env.AWS_REGION }}" \
-                          -auto-approve -debug
+                          -auto-approve
 
       - name: Gather EC2 public IP
         run: |
