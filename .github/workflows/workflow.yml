@@ -19,48 +19,50 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Install Terraform
-        uses: hashicorp/setup-terraform@v2
-
-      - name: Install SSH & Ansible
-        run: |
-          sudo apt-get update && sudo apt-get install -y openssh-server ansible
-
       - name: Create Files for SSH keys
         run: |
-             touch ~/.ssh/id_aws_ec2 ~/.ssh/id_aws_ec2.pub
-             echo "${{ env.SSH_PRIVATE_KEY }}" > ~/.ssh/id_aws_ec2
-             echo "${{ env.SSH_PUBLIC_KEY }}" > ~/.ssh/id_aws_ec2.pub
+             sudo touch ~/.ssh/id_aws_ec2 ~/.ssh/id_aws_ec2.pub
+             ls ~/.ssh/
+             
+             sudo echo "${{ env.SSH_PRIVATE_KEY }}" > ~/.ssh/id_aws_ec2
+             sudo echo "${{ env.SSH_PUBLIC_KEY }}" > ~/.ssh/id_aws_ec2.pub
 
-      - name: Terraform Init
-        run: |
-          cd ./terraform
-          terraform init
+      # - name: Set up AWS credentials
+      #   uses: aws-actions/configure-aws-credentials@v1
+      #   with:
+      #     aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+      #     aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+      #     aws-region: ${{ env.AWS_REGION }}
 
-      - name: Terraform Apply (manual approval)
-        run: |
-          cd ./terraform
-          sudo terraform apply 
-                          -var="key_name_value=${{ env.SSH_PUBLIC_KEY }}" \
-                          -var="aws_region=${{ env.AWS_REGION }}" \
-                          -auto-approve
+      # - name: Install Terraform
+      #   uses: hashicorp/setup-terraform@v2
 
-      - name: Gather EC2 public IP
-        run: |
-            terraform output -raw public_ip > public_ip.txt
-            export EC2_PUBLIC_IP=$(cat public_ip.txt)
-            echo "EC2_PUBLIC_IP=$EC2_PUBLIC_IP"
+      # - name: Install SSH & Ansible
+      #   run: |
+      #     sudo apt-get update && sudo apt-get install -y openssh-server ansible      
+
+      # - name: Terraform Init
+      #   run: |
+      #     cd ./terraform
+      #     terraform init
+
+      # - name: Terraform Apply (manual approval)
+      #   run: |
+      #     cd ./terraform
+      #     sudo terraform apply 
+      #                     -var="key_name_value=${{ env.SSH_PUBLIC_KEY }}" \
+      #                     -var="aws_region=${{ env.AWS_REGION }}" \
+      #                     -auto-approve
+
+      # - name: Gather EC2 public IP
+      #   run: |
+      #       terraform output -raw public_ip > public_ip.txt
+      #       export EC2_PUBLIC_IP=$(cat public_ip.txt)
+      #       echo "EC2_PUBLIC_IP=$EC2_PUBLIC_IP"
                   
 
-      - name: Run Ansible playbook
-        run: |
-              cd ./ansible
-              echo "ec2_host ansible_host=$EC2_PUBLIC_IP" > hosts
-              ansible-playbook main.yml
+      # - name: Run Ansible playbook
+      #   run: |
+      #         cd ./ansible
+      #         echo "ec2_host ansible_host=$EC2_PUBLIC_IP" > hosts
+      #         ansible-playbook main.yml
