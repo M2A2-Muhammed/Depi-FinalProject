@@ -10,7 +10,8 @@
 
   tasks:
     - name: Update package lists
-      apt: update
+      apt:
+        update_cache: yes
 
     - name: Install required packages
       apt:

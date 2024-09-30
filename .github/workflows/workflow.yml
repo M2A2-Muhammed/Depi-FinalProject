@@ -19,6 +19,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: download terraform
+        uses: actions/download-artifact@v4
+        with:
+          path: .
+
       - name: Create Files for SSH keys
         run: |
              echo "${{ env.SSH_PRIVATE_KEY }}" > id_aws_ec2
@@ -50,6 +55,18 @@ jobs:
                           -var="key_name_value=${{ env.SSH_PUBLIC_KEY }}" \
                           -var="aws_region=${{ env.AWS_REGION }}" \
                           -auto-approve
+
+      - name: upload terraform state                  
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-state
+          path: terraform.tfstate
+
+      - name: upload terraform state backup                
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-state-backup
+          path: terraform.tfstate.backup
 
       - name: Gather EC2 public IP
         run: |
