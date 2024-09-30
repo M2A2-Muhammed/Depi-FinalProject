@@ -24,51 +24,45 @@ jobs:
              echo "${{ env.SSH_PRIVATE_KEY }}" > id_aws_ec2
              echo "${{ env.SSH_PUBLIC_KEY }}" > id_aws_ec2.pub
 
-             ls
-             
              mkdir ~/.ssh/
              cp ./id_aws_ec2 ./id_aws_ec2.pub ~/.ssh/
-             ls ~/.ssh/
              
-             cat ~/.ssh/id_aws_ec2
-             cat ~/.ssh/id_aws_ec2.pub
+      - name: Set up AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      # - name: Set up AWS credentials
-      #   uses: aws-actions/configure-aws-credentials@v1
-      #   with:
-      #     aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
-      #     aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
-      #     aws-region: ${{ env.AWS_REGION }}
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v2
 
-      # - name: Install Terraform
-      #   uses: hashicorp/setup-terraform@v2
+      - name: Install SSH & Ansible
+        run: |
+          sudo apt-get update && sudo apt-get install -y openssh-server ansible      
 
-      # - name: Install SSH & Ansible
-      #   run: |
-      #     sudo apt-get update && sudo apt-get install -y openssh-server ansible      
+      - name: Terraform Init
+        run: |
+          cd ./terraform
+          terraform init
 
-      # - name: Terraform Init
-      #   run: |
-      #     cd ./terraform
-      #     terraform init
+      - name: Terraform Apply (manual approval)
+        run: |
+          cd ./terraform
+          sudo terraform apply 
+                          -var="key_name_value=${{ env.SSH_PUBLIC_KEY }}" \
+                          -var="aws_region=${{ env.AWS_REGION }}" \
+                          -auto-approve
 
-      # - name: Terraform Apply (manual approval)
-      #   run: |
-      #     cd ./terraform
-      #     sudo terraform apply 
-      #                     -var="key_name_value=${{ env.SSH_PUBLIC_KEY }}" \
-      #                     -var="aws_region=${{ env.AWS_REGION }}" \
-      #                     -auto-approve
-
-      # - name: Gather EC2 public IP
-      #   run: |
-      #       terraform output -raw public_ip > public_ip.txt
-      #       export EC2_PUBLIC_IP=$(cat public_ip.txt)
-      #       echo "EC2_PUBLIC_IP=$EC2_PUBLIC_IP"
+      - name: Gather EC2 public IP
+        run: |
+            terraform output -raw public_ip > public_ip.txt
+            export EC2_PUBLIC_IP=$(cat public_ip.txt)
+            echo "EC2_PUBLIC_IP=$EC2_PUBLIC_IP"
                   
 
-      # - name: Run Ansible playbook
-      #   run: |
-      #         cd ./ansible
-      #         echo "ec2_host ansible_host=$EC2_PUBLIC_IP" > hosts
-      #         ansible-playbook main.yml
+      - name: Run Ansible playbook
+        run: |
+              cd ./ansible
+              echo "ec2_host ansible_host=$EC2_PUBLIC_IP" > hosts
+              ansible-playbook main.yml
