@@ -55,6 +55,12 @@ jobs:
                           -var="key_name_value=${{ env.SSH_PUBLIC_KEY }}" \
                           -var="aws_region=${{ env.AWS_REGION }}" \
                           -auto-approve
+          
+          # Save the public IP to an environment variable
+          export PUBLIC_IP=$(terraform output -raw public_ip)
+
+          # Use the variable
+          echo "The public IP is: $PUBLIC_IP"
 
       - name: upload terraform state                  
         uses: actions/upload-artifact@v4
@@ -68,16 +74,17 @@ jobs:
           name: terraform-state-backup
           path: terraform.tfstate.backup
 
-      - name: Gather EC2 public IP
-        run: |
-            export EC2_PUBLIC_IP=$(terraform output -raw public_ip)
-            echo "EC2_PUBLIC_IP=$EC2_PUBLIC_IP"
+      # - name: Gather EC2 public IP
+      #   run: |
+      #       echo $(terraform output -raw public_ip) > public_ip.txt
+      #       cat  public_ip.txt
+      #       echo "public_ip = $(cat public_ip.txt)"
                   
 
       - name: Run Ansible playbook
         run: |
               cd ./ansible
               echo "[ec2_hosts]" > hosts
-              echo "ec2_host ansible_host=$EC2_PUBLIC_IP" >> hosts
+              echo "ec2_host ansible_host=$PUBLIC_IP" >> hosts
               cat hosts
               ansible-playbook -i hosts main.yml
