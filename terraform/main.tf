@@ -32,7 +32,7 @@ resource "aws_security_group" "allow_ssh" {
 }
 
 resource "aws_instance" "web-server" {
-  ami             = "ami-0c55b159cbfafe1f0"
+  ami             = var.ami
   instance_type   = var.instance_type
   key_name        = aws_key_pair.my_key_pair.key_name
   security_groups = [aws_security_group.allow_ssh.id]
