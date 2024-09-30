@@ -22,7 +22,6 @@ jobs:
       - name: Create Files for SSH keys
         run: |
              mkdir ~/.ssh/
-             sudo chmod 700 ~/.ssh/
              sudo touch ~/.ssh/id_aws_ec2 ~/.ssh/id_aws_ec2.pub
              ls ~/.ssh/
              
