@@ -68,7 +68,11 @@ jobs:
           terraform validate
           terraform apply -auto-approve
           echo "INSTANCE_IP=$(terraform output -raw instance_ip)" >> $GITHUB_ENV
-        
+      
+      - name: Check Network Connectivity
+        run: |
+            ping -c 4 ${{ env.INSTANCE_IP }}
+
       - name: Add Host to known_hosts
         run: |
           mkdir -p ~/.ssh
