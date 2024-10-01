@@ -96,7 +96,7 @@ jobs:
 
       - name: Add Host Key to known_hosts
         run: |
-          touch ~/.ssh/known_hosts
+          touch ~/.ssh/known_hosts | echo "already exists"
           ssh-keyscan -H ${{ env.INSTANCE_IP }} >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
 
