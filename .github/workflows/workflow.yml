@@ -62,48 +62,47 @@ jobs:
             echo "SSH client is already installed."
           fi
 
-      - name: Check for SSH Key Cache
-        id: check_ssh_cache
-        run: |
-          if [ -f ~/.ssh/${{ env.SSH_KEY_NAME }} ]; then
-            echo "SSH key cache exists."
-            echo "ssh_cache_exists=true" >> $GITHUB_ENV
-          else
-            echo "SSH key cache not exists."
-            echo "ssh_cache_exists=false" >> $GITHUB_ENV
-          fi
-
-      - name: Generate SSH Key
-        if: env.ssh_cache_exists == 'false'
-        run: |
-          ssh-keygen -t rsa -b 4096 -f ~/.ssh/${{ env.SSH_KEY_NAME }} -N "" || echo "SSH key already exists"
-
-      - name: Set up SSH Key
-        run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          cat ~/.ssh/${{ env.SSH_KEY_NAME }}.pub | tee -a ~/.ssh/authorized_keys
-
+      
       - name: Cache SSH Keys
-        if: env.ssh_cache_exists == 'false'
+        id: cache_ssh
         uses: actions/cache@v3
         with:
           path: ~/.ssh/${{ env.SSH_KEY_NAME }}*
           key: ${{ runner.os }}-ssh-keys-${{ hashFiles(format('~/.ssh/%s.pub', env.SSH_KEY_NAME)) }}
           restore-keys: |
             ${{ runner.os }}-ssh-keys-
-      
-      - name: Check for Terraform State Cache
-        id: check_tf_cache
+
+      - name: Check if cache was restored
         run: |
-          if [ -d .terraform ]; then
-            echo "Terraform state cache exists."
-            echo "tf_cache_exists=true" >> $GITHUB_ENV
+          if [[ "${{ steps.cache_ssh.outputs.cache-hit }}" == "true" ]]; then
+            echo "Cache was restored."
           else
-            echo "Terraform state cache not exists."
-            echo "tf_cache_exists=false" >> $GITHUB_ENV
+            echo "Cache was not found."
           fi
-      
+
+      - name: Generate SSH Key
+        if: steps.cache_ssh.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keygen -t rsa -b 4096 -f ~/.ssh/${{ env.SSH_KEY_NAME }} -N "" || echo "SSH key already exists"
+
+      - name: Set up SSH Key
+        if: steps.cache_ssh.outputs.cache-hit != 'true'
+        run: |
+          chmod 700 ~/.ssh
+          cat ~/.ssh/${{ env.SSH_KEY_NAME }}.pub | tee -a ~/.ssh/authorized_keys
+
+      - name: Check for Terraform State File
+        id: check_tf_state_file
+        run: |
+          if [ -f terraform.tfstate ]; then
+            echo "Terraform state file exists."
+            echo "tf_state_file_exists=true" >> $GITHUB_ENV
+          else
+            echo "Terraform state file does not exist."
+            echo "tf_state_file_exists=false" >> $GITHUB_ENV
+          fi
+    
       - name: Terraform Init
         run: terraform init
       
@@ -119,17 +118,31 @@ jobs:
         id: instance_ip
         run: echo "INSTANCE_IP=$(terraform output -raw instance_ip)" >> $GITHUB_ENV
 
-      - name: Add ec2 to known hosts
-        run: ssh-keyscan -H ${{ env.INSTANCE_IP }} >> ~/.ssh/known_hosts
-
-      - name: Cache Terraform State
-        if:  env.tf_cache_exists == 'false'
+      - name: Cache Terraform State File
+        id: cache_tf_state
         uses: actions/cache@v3
         with:
-          path: .terraform/
+          path: terraform.tfstate
           key: ${{ runner.os }}-terraform-state-${{ hashFiles('**/*.tf') }}
           restore-keys: |
             ${{ runner.os }}-terraform-state-
+
+      - name: Check if Cache was Restored
+        run: |
+          if [[ "${{ steps.cache_tf_state.outputs.cache-hit }}" == "true" ]]; then
+            echo "Cache was restored."
+          else
+            echo "Cache was not found."
+          fi
+
+      - name: Add ec2 to known hosts
+        run: ssh-keyscan -H ${{ env.INSTANCE_IP }} >> ~/.ssh/known_hosts
+
+      - name: Install Ansible
+        run: |
+          if [ ! -d ~/.ansible ]; then
+            sudo apt-get install -y ansible
+          fi
 
       - name: Cache Ansible Installation
         uses: actions/cache@v3
@@ -139,12 +152,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-ansible-
 
-      - name: Install Ansible
-        run: |
-          if [ ! -d ~/.ansible ]; then
-            sudo apt-get install -y ansible
-          fi
-
+                
       - name: Run Ansible Playbook
         run: |
             cd ./ansible
