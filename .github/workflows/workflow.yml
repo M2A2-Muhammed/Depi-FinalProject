@@ -72,7 +72,7 @@ jobs:
       - name: Add Host to known_hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ env.INSTANCE_IP }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ env.INSTANCE_IP }} > ~/.ssh/known_hosts
 
       - name: Run Ansible Playbook
         run: |
