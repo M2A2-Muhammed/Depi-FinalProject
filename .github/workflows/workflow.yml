@@ -90,7 +90,15 @@ jobs:
                   IdentityFile ~/.ssh/${{ env.SSH_KEY_NAME }}" >> ~/.ssh/config
 
       - name: Set permissions for SSH config
-        run: chmod 600 ~/.ssh/config
+        run: |
+              chmod 600 ~/.ssh/config
+              cat ~/.ssh/config
+
+      - name: Add Host Key to known_hosts
+        run: |
+          touch ~/.ssh/known_hosts
+          ssh-keyscan -H ec2-instance >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
 
       - name: Cache Ansible Installation
         uses: actions/cache@v3
