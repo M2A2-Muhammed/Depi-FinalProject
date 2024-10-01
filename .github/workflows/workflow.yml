@@ -45,16 +45,7 @@ jobs:
         with:
           terraform_wrapper: false
 
-      - name: Cache Terraform
-        uses: actions/cache@v3
-        with:
-          path: ~/.terraform.d/plugin-cache
-          key: ${{ runner.os }}-terraform-${{ hashFiles('**/*.tf') }}
-          restore-keys: |
-            ${{ runner.os }}-terraform-
-
       - name: Cache SSH Client Installation
-        id: cache_ssh_client
         run: |
           if ! command -v ssh &> /dev/null; then
             echo "SSH client not found. Installing..."
@@ -66,17 +57,17 @@ jobs:
 
       - name: Create Files for SSH keys
         run: |
-              echo "${{ env.SSH_PRIVATE_KEY }}" > ${{ env.SSH_KEY_NAME }}
-              echo "${{ env.SSH_PUBLIC_KEY }}" > ${{ env.SSH_KEY_NAME }}.pub
+          echo "${{ env.SSH_PRIVATE_KEY }}" > ${{ env.SSH_KEY_NAME }}
+          echo "${{ env.SSH_PUBLIC_KEY }}" > ${{ env.SSH_KEY_NAME }}.pub
 
-              mkdir ~/.ssh/
-              cp ./${{ env.SSH_KEY_NAME }} ./${{ env.SSH_KEY_NAME }}.pub ~/.ssh/
-
-              cat ~/.ssh/${{ env.SSH_KEY_NAME }}.pub | tee -a ~/.ssh/authorized_keys          
+          mkdir -p ~/.ssh/
+          mv ./${{ env.SSH_KEY_NAME }} ~/.ssh/
+          mv ./${{ env.SSH_KEY_NAME }}.pub ~/.ssh/
+          chmod 600 ~/.ssh/${{ env.SSH_KEY_NAME }}
 
       - name: Terraform Init
         run: terraform init
-      
+
       - name: Terraform Apply
         id: apply
         env:
@@ -84,20 +75,18 @@ jobs:
           TF_VAR_aws_secret_access_key: ${{ env.AWS_SECRET_ACCESS_KEY }}
           TF_VAR_aws_region: ${{ env.AWS_REGION }}
           TF_VAR_ssh_public_key: "~/.ssh/${{ env.SSH_KEY_NAME }}.pub"
-          TF_VAR_ssh_private_key: "~/.ssh/${{ env.SSH_KEY_NAME }}"
         run: | 
             terraform apply -auto-approve
-            ls -a
 
       - name: Get Instance IP
         id: instance_ip
         run: echo "INSTANCE_IP=$(terraform output -raw instance_ip)" >> $GITHUB_ENV
 
-      - name: Add ec2 to known hosts
+      - name: Add EC2 to Known Hosts
         run: |
-             echo "${{ env.INSTANCE_IP }} $(cat ~/.ssh/${{ env.SSH_KEY_NAME }}.pub)" >> ~/.ssh/known_hosts
-             cat ~/.ssh/known_hosts
-             
+          ssh-keyscan -H "${{ env.INSTANCE_IP }}" >> ~/.ssh/known_hosts
+          cat ~/.ssh/known_hosts
+
       - name: Cache Ansible Installation
         uses: actions/cache@v3
         with:
@@ -105,16 +94,15 @@ jobs:
           key: ${{ runner.os }}-ansible-${{ hashFiles('**/requirements.yml') }}
           restore-keys: |
             ${{ runner.os }}-ansible-
-          
+
       - name: Install Ansible
         run: |
-          if [ ! -d ~/.ansible ]; then
+          if ! command -v ansible &> /dev/null; then
             sudo apt-get install -y ansible
+          else
+            echo "Ansible is already installed."
           fi
 
-      
-
-                
       - name: Run Ansible Playbook
         run: |
             cd ./ansible

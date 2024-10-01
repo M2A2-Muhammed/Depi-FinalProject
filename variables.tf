@@ -33,8 +33,3 @@ variable "ssh_public_key" {
   default = "~/.ssh/github-actions-key.pub"
 }
 
-variable "ssh_private_key" {
-  type    = string
-  default = "~/.ssh/github-actions-key"
-}
-
