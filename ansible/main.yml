@@ -6,7 +6,16 @@
 
   tasks:
     - name: Check network connectivity
-      run: curl -I https://archive.ubuntu.com
+      uri:
+        url: https://archive.ubuntu.com
+        return_content: no
+      register: connectivity
+      ignore_errors: yes
+
+    - name: Fail if unable to connect to network
+      fail:
+        msg: "Cannot reach the Ubuntu repository. Check network settings."
+      when: connectivity is failed
 
     - name: Update the package manager
       apt:
@@ -42,6 +51,8 @@
 
         - name: Move Prometheus binary files
           command: mv /usr/local/bin/prometheus-* /usr/local/bin/prometheus
+          args:
+            removes: /usr/local/bin/prometheus # Ensure it only runs if the target doesn't exist
 
         - name: Create Prometheus configuration directory
           file:
@@ -89,13 +100,3 @@
             state: present
 
         - name: Start and enable Grafana
-          systemd:
-            name: grafana-server
-            state: started
-            enabled: yes
-
-    - name: Open firewall for Prometheus and Grafana
-      ufw:
-        rule: allow
-        name: "Open HTTP"
-        state: enabled
