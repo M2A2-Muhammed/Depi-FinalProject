@@ -84,7 +84,7 @@ jobs:
 
       - name: Add EC2 to Known Hosts
         run: |
-          ssh-keyscan -H "${{ env.INSTANCE_IP }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -H "${{ env.INSTANCE_IP }}" > ~/.ssh/known_hosts
           cat ~/.ssh/known_hosts
 
       - name: Cache Ansible Installation
