@@ -7,6 +7,8 @@ on:
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRV_KEY }}
+  SSH_PUBLIC_KEY: ${{ secrets.SSH_PUB_KEY }}
   AWS_REGION: ${{ vars.AWS_REGION }}
   SSH_KEY_NAME: "github-actions-key"
 
@@ -62,17 +64,15 @@ jobs:
             echo "SSH client is already installed."
           fi
 
-      - name: Generate SSH Key
-        if: steps.cache_ssh.outputs.cache-hit != 'true'
+      - name: Create Files for SSH keys
         run: |
-          mkdir -p ~/.ssh
-          touch ~/.ssh/known_hosts
-          ssh-keygen -t rsa -b 4096 -f ~/.ssh/${{ env.SSH_KEY_NAME }} -N "" || echo "SSH key already exists"
+              echo "${{ env.SSH_PRIVATE_KEY }}" > ${{ env.SSH_KEY_NAME }}
+              echo "${{ env.SSH_PUBLIC_KEY }}" > ${{ env.SSH_KEY_NAME }}.pub
 
-      - name: Set up SSH Key
-        if: steps.cache_ssh.outputs.cache-hit != 'true'
-        run: |
-          cat ~/.ssh/${{ env.SSH_KEY_NAME }}.pub | tee -a ~/.ssh/authorized_keys
+              mkdir ~/.ssh/
+              cp ./${{ env.SSH_KEY_NAME }} ./${{ env.SSH_KEY_NAME }}.pub ~/.ssh/
+
+              cat ~/.ssh/${{ env.SSH_KEY_NAME }}.pub | tee -a ~/.ssh/authorized_keys          
 
       - name: Terraform Init
         run: terraform init
@@ -83,6 +83,8 @@ jobs:
           TF_VAR_aws_access_key_id: ${{ env.AWS_ACCESS_KEY_ID }}
           TF_VAR_aws_secret_access_key: ${{ env.AWS_SECRET_ACCESS_KEY }}
           TF_VAR_aws_region: ${{ env.AWS_REGION }}
+          TF_VAR_ssh_public_key: "~/.ssh/${{ env.SSH_KEY_NAME }}.pub"
+          TF_VAR_ssh_private_key: "~/.ssh/${{ env.SSH_KEY_NAME }}"
         run: | 
             terraform apply -auto-approve
             ls -a
