@@ -112,7 +112,6 @@ jobs:
       - name: List State Files
         run: |
           ls -la terraform.tfstate
-          ls -la terraform.tfstate.backup
           ls -la
 
       - name: Cache Terraform State File
@@ -121,7 +120,6 @@ jobs:
         with:
           path: | 
                 terraform.tfstate
-                terraform.tfstate.backup
           key: ${{ runner.os }}-terraform-state-${{ hashFiles('**/*.tf') }}
           restore-keys: |
             ${{ runner.os }}-terraform-state-
