@@ -59,10 +59,16 @@
             path: /etc/prometheus
             state: directory
 
-        - name: Copy Prometheus configuration file
+        - name: Create a default Prometheus configuration file
           copy:
-            src: prometheus.yml
             dest: /etc/prometheus/prometheus.yml
+            content: |
+              global:
+                scrape_interval: 15s
+              scrape_configs:
+                - job_name: 'prometheus'
+                  static_configs:
+                    - targets: ['localhost:9090']
 
         - name: Create Prometheus systemd service file
           copy:
