@@ -92,7 +92,31 @@ jobs:
           chmod 700 ~/.ssh
           cat ~/.ssh/${{ env.SSH_KEY_NAME }}.pub | tee -a ~/.ssh/authorized_keys
 
+          - name: List State Files
+          run: |
+            ls -la terraform.tfstate
+            ls -la
+  
+      - name: Cache Terraform State File
+        id: cache_tf_state
+        uses: actions/cache@v3
+        with:
+          path: | 
+                **/*.tfstate
+          key: ${{ runner.os }}-terraform-state-${{ hashFiles('**/*.tfstate') }}
+          restore-keys: |
+            ${{ runner.os }}-terraform-state-
+  
+      - name: Check if Cache was Restored
+        run: |
+          if [[ "${{ steps.cache_tf_state.outputs.cache-hit }}" == "true" ]]; then
+            echo "Cache was restored."
+          else
+            echo "Cache was not found."
+          fi
+
       - name: Terraform Init
+        if: steps.cache_tf_state.outputs.cache-hit == 'false'
         run: terraform init
       
       - name: Terraform Apply
@@ -108,29 +132,6 @@ jobs:
       - name: Get Instance IP
         id: instance_ip
         run: echo "INSTANCE_IP=$(terraform output -raw instance_ip)" >> $GITHUB_ENV
-
-      - name: List State Files
-        run: |
-          ls -la terraform.tfstate
-          ls -la
-
-      - name: Cache Terraform State File
-        id: cache_tf_state
-        uses: actions/cache@v3
-        with:
-          path: | 
-                **/*.tfstate
-          key: ${{ runner.os }}-terraform-state-${{ hashFiles('**/*.tfstate') }}
-          restore-keys: |
-            ${{ runner.os }}-terraform-state-
-
-      - name: Check if Cache was Restored
-        run: |
-          if [[ "${{ steps.cache_tf_state.outputs.cache-hit }}" == "true" ]]; then
-            echo "Cache was restored."
-          else
-            echo "Cache was not found."
-          fi
 
       - name: Add ec2 to known hosts
         run: |
