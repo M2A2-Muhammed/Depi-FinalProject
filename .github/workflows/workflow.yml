@@ -70,7 +70,7 @@ jobs:
       
       - name: Terraform Validate
         run: terraform validate
-        
+
       - name: Terraform Apply
         id: apply
         env:
@@ -81,52 +81,52 @@ jobs:
         run: | 
             terraform apply -auto-approve
 
-      # - name: Get Instance IP
-      #   id: instance_ip
-      #   run: echo "INSTANCE_IP=$(terraform output -raw instance_ip)" >> $GITHUB_ENV
+      - name: Get Instance IP
+        id: instance_ip
+        run: echo "INSTANCE_IP=$(terraform output -raw instance_ip)" >> $GITHUB_ENV
 
-      # - name: Add host to config
-      #   run: |
-      #     echo "Host ec2-instance
-      #             HostName ${{ env.INSTANCE_IP }}
-      #             User ubuntu
-      #             IdentityFile ~/.ssh/${{ env.SSH_KEY_NAME }}" >> ~/.ssh/config
+      - name: Add host to config
+        run: |
+          echo "Host ec2-instance
+                  HostName ${{ env.INSTANCE_IP }}
+                  User ubuntu
+                  IdentityFile ~/.ssh/${{ env.SSH_KEY_NAME }}" >> ~/.ssh/config
 
-      # - name: Set permissions for SSH config
-      #   run: |
-      #         chmod 600 ~/.ssh/config
-      #         cat ~/.ssh/config
+      - name: Set permissions for SSH config
+        run: |
+              chmod 600 ~/.ssh/config
+              cat ~/.ssh/config
 
-      # - name: Add Host Key to known_hosts
-      #   run: |
-      #     if [ ! -f ~/.ssh/known_hosts ]; then
-      #       touch ~/.ssh/known_hosts
-      #       echo "known_hosts file created."
-      #     else
-      #       echo "known_hosts file already exists."
-      #     fi
-      #     cat ~/.ssh/known_hosts
-      #     ssh -i ~/.ssh/${{ env.SSH_KEY_NAME }} ubuntu@${{ env.INSTANCE_IP }}
-      #     chmod 644 ~/.ssh/known_hosts
-      #     cat ~/.ssh/known_hosts
+      - name: Add Host Key to known_hosts
+        run: |
+          if [ ! -f ~/.ssh/known_hosts ]; then
+            touch ~/.ssh/known_hosts
+            echo "known_hosts file created."
+          else
+            echo "known_hosts file already exists."
+          fi
+          cat ~/.ssh/known_hosts
+          ssh -i ~/.ssh/${{ env.SSH_KEY_NAME }} ubuntu@${{ env.INSTANCE_IP }}
+          chmod 644 ~/.ssh/known_hosts
+          cat ~/.ssh/known_hosts
 
-      # - name: Cache Ansible Installation
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: ~/.ansible
-      #     key: ${{ runner.os }}-ansible-${{ hashFiles('**/requirements.yml') }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-ansible-
+      - name: Cache Ansible Installation
+        uses: actions/cache@v3
+        with:
+          path: ~/.ansible
+          key: ${{ runner.os }}-ansible-${{ hashFiles('**/requirements.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-ansible-
 
-      # - name: Install Ansible
-      #   run: |
-      #     if ! command -v ansible &> /dev/null; then
-      #       sudo apt-get install -y ansible
-      #     else
-      #       echo "Ansible is already installed."
-      #     fi
+      - name: Install Ansible
+        run: |
+          if ! command -v ansible &> /dev/null; then
+            sudo apt-get install -y ansible
+          else
+            echo "Ansible is already installed."
+          fi
 
-      # - name: Run Ansible Playbook
-      #   run: |
-      #       cd ./ansible
-      #       ansible-playbook -i "ec2-instance," main.yml
+      - name: Run Ansible Playbook
+        run: |
+            cd ./ansible
+            ansible-playbook -i "ec2-instance," main.yml
