@@ -73,12 +73,19 @@ resource "aws_security_group" "allow_access" {
     from_port   = 9090
     to_port     = 9090
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # Allow HTTP from anywhere
+    cidr_blocks = ["0.0.0.0/0"] # Allow Prometheus
   }
 
   ingress {
     from_port   = 3000
     to_port     = 3000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] # Allow Grafana
+  }
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"] # Allow HTTP from anywhere
   }
@@ -91,7 +98,7 @@ resource "aws_security_group" "allow_access" {
   }
 
   tags = {
-    Name = "Allow SSH, Prometheus & Grafana"
+    Name = "Allow SSH,http, Prometheus & Grafana"
   }
 }
 

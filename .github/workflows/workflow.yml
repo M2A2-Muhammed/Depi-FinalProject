@@ -8,7 +8,6 @@ env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   SSH_PRIVATE_KEY: ${{ secrets.SSH_PRV_KEY }}
-  SSH_PUBLIC_KEY: ${{ secrets.SSH_PUB_KEY }}
   AWS_REGION: ${{ vars.AWS_REGION }}
   SSH_KEY_NAME: "github-actions-key"
 
@@ -20,150 +19,62 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Cache Dependencies
+        uses: actions/cache@v4
+        with:
+          path: /tmp/ssh_ansible
+          key: ssh-ansible-${{ runner.os }}-${{ hashFiles('**/requirements.yml') }}
+          restore-keys: |
+            ssh-ansible-${{ runner.os }}-
+
+      - name: Install SSH Client and Ansible
+        run: |
+          if [ ! -d "/tmp/ssh_ansible" ]; then
+            sudo apt-get update
+            sudo apt-get install -y openssh-client ansible
+            mkdir -p /tmp/ssh_ansible
+          else
+            echo "SSH client and Ansible are already cached."
+          fi
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0 # Specify your required version
+          terraform_wrapper: false
+
       - name: Cache Terraform
         uses: actions/cache@v4
         with:
           path: ~/.terraform.d/plugin-cache
-          key: ${{ runner.os }}-terraform-${{ hashFiles('**/*.tf') }}
+          key: terraform-${{ runner.os }}-${{ hashFiles('**/*.tf') }}
           restore-keys: |
-            ${{ runner.os }}-terraform-
+            terraform-${{ runner.os }}-
 
-      - name: Check for Terraform Installation
-        id: check_terraform
+      - name: Start SSH Agent
         run: |
-          if command -v terraform &> /dev/null; then
-            echo "Terraform is already installed."
-            echo "terraform_cache_exists=true" >> $GITHUB_ENV
-          else
-            echo "Terraform not found. Installing..."
-            echo "terraform_cache_exists=false" >> $GITHUB_ENV
-          fi
+          eval "$(ssh-agent -s)"
+          echo "${{ env.SSH_PRIVATE_KEY }}" | tr -d '\r' | ssh-add -
 
-      - name: Setup Terraform
-        if: env.terraform_cache_exists == 'false'
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_wrapper: false
-
-      - name: Cache SSH Client Installation
-        run: |
-          if ! command -v ssh &> /dev/null; then
-            echo "SSH client not found. Installing..."
-            sudo apt-get update
-            sudo apt-get install -y openssh-client
-          else
-            echo "SSH client is already installed."
-          fi
-
-      - name: Restore SSH Keys cache
-        id: restore-ssh-keys-cache
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-                ~/.ssh/${{ env.SSH_KEY_NAME }}
-                ~/.ssh/${{ env.SSH_KEY_NAME }}.pub
-          key: ${{ runner.os }}-ssh-keys
-          restore-keys: |
-            ${{ runner.os }}-ssh-keys
-
-      - name: Create Files for SSH keys
-        if: steps.restore-ssh-keys-cache.outputs.cache-hit != 'true'
-        run: |
-          echo "${{ env.SSH_PRIVATE_KEY }}" > ${{ env.SSH_KEY_NAME }}
-          echo "${{ env.SSH_PUBLIC_KEY }}" > ${{ env.SSH_KEY_NAME }}.pub
-
-          mkdir -p ~/.ssh/
-          mv ./${{ env.SSH_KEY_NAME }} ~/.ssh/
-          mv ./${{ env.SSH_KEY_NAME }}.pub ~/.ssh/
-          chmod 600 ~/.ssh/${{ env.SSH_KEY_NAME }}
-
-      - name: Save ssh keys to cache
-        if: steps.restore-ssh-keys-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: |
-             ~/.ssh/${{ env.SSH_KEY_NAME }}
-             ~/.ssh/${{ env.SSH_KEY_NAME }}.pub
-          key: ${{ steps.restore-ssh-keys-cache.outputs.cache-primary-key }}
-
-      - name: Terraform Init
-        run: terraform init
-      
-      - name: Terraform Validate
-        run: terraform validate
-
-      - name: Terraform Apply
-        id: apply
+      - name: Terraform process
         env:
           TF_VAR_aws_access_key_id: ${{ env.AWS_ACCESS_KEY_ID }}
           TF_VAR_aws_secret_access_key: ${{ env.AWS_SECRET_ACCESS_KEY }}
           TF_VAR_aws_region: ${{ env.AWS_REGION }}
           TF_VAR_ssh_public_key: "~/.ssh/${{ env.SSH_KEY_NAME }}.pub"
-        run: | 
-            terraform apply -auto-approve
-
-      - name: Get Instance IP
-        id: instance_ip
-        run: echo "INSTANCE_IP=$(terraform output -raw instance_ip)" >> $GITHUB_ENV
-
-      - name: Restore SSH config and known_hosts cache
-        id: restore-ssh-config-cache
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-                ~/.ssh/config
-                ~/.ssh/known_hosts
-          key: ${{ runner.os }}-ssh-config
-          restore-keys: |
-            ${{ runner.os }}-ssh-config
-
-      - name: Add host to config
-        if: steps.restore-ssh-config-cache.outputs.cache-hit != 'true'
         run: |
-          echo "Host ec2-instance
-                  HostName ${{ env.INSTANCE_IP }}
-                  User ubuntu
-                  IdentityFile ~/.ssh/${{ env.SSH_KEY_NAME }}" >> ~/.ssh/config
-
-      - name: Set permissions for SSH config
-        if: steps.restore-ssh-config-cache.outputs.cache-hit != 'true'
+          terraform init
+          terraform validate
+          terraform apply -auto-approve
+          echo "INSTANCE_IP=$(terraform output -raw instance_ip)" >> $GITHUB_ENV
+        
+      - name: Add Host to known_hosts
         run: |
-              chmod 600 ~/.ssh/config
-              cat ~/.ssh/config
-
-      - name: Add Host Key to known_hosts
-        if: steps.restore-ssh-config-cache.outputs.cache-hit != 'true'
-        run: |    
-          ssh-keyscan ${{ env.INSTANCE_IP }} >> ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
-          cat ~/.ssh/known_hosts
-
-      - name: Save ssh config to cache
-        if: steps.restore-ssh-config-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: |
-               ~/.ssh/config
-                ~/.ssh/known_hosts
-          key: ${{ steps.restore-ssh-config-cache.outputs.cache-primary-key }}
-
-      - name: Cache Ansible Installation
-        uses: actions/cache@v4
-        with:
-          path: ~/.ansible
-          key: ${{ runner.os }}-ansible-${{ hashFiles('**/requirements.yml') }}
-          restore-keys: |
-            ${{ runner.os }}-ansible-
-
-      - name: Install Ansible
-        run: |
-          if ! command -v ansible &> /dev/null; then
-            sudo apt-get install -y ansible
-          else
-            echo "Ansible is already installed."
-          fi
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ env.INSTANCE_IP }} >> ~/.ssh/known_hosts
 
       - name: Run Ansible Playbook
         run: |
             cd ./ansible
-            ansible-playbook -i "ec2-instance," main.yml
+            ansible-playbook -i "${{ env.INSTANCE_IP }}," main.yml --private-key=~/.ssh/${{ env.SSH_KEY_NAME }} --user=ubuntu
+
