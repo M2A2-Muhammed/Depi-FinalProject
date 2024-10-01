@@ -99,4 +99,4 @@
             name: grafana
             state: present
 
-        - name: Start and enable Grafana
+    - name: Start and enable Grafana
