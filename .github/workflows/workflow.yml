@@ -92,11 +92,6 @@ jobs:
           chmod 700 ~/.ssh
           cat ~/.ssh/${{ env.SSH_KEY_NAME }}.pub | tee -a ~/.ssh/authorized_keys
 
-      - name: List State Files
-        run: |
-          ls -la terraform.tfstate
-          ls -la
-  
       - name: Cache Terraform State File
         id: cache_tf_state
         uses: actions/cache@v3
@@ -116,7 +111,7 @@ jobs:
           fi
 
       - name: Terraform Init
-        if: steps.cache_tf_state.outputs.cache-hit == 'false'
+        if: steps.cache_tf_state.outputs.cache-hit != 'true'
         run: terraform init
       
       - name: Terraform Apply
