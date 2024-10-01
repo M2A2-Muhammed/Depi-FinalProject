@@ -42,16 +42,13 @@ resource "aws_instance" "web-server" {
     Name = "web-server"
   }
 
-  provisioner "remote-exec" {
-    inline = [
-      "echo ${self.private_ip} >> /etc/hosts"
-    ]
+  # User data to install OpenSSH server
+  user_data = <<-EOF
+              #!/bin/bash
+              yum update -y
+              yum install -y openssh-server
+              systemctl enable sshd
+              systemctl start sshd
+              EOF
 
-    connection {
-      type        = "ssh"
-      user        = "ec2-user"
-      private_key = file(var.ssh_private_key)
-      host        = self.public_ip
-    }
-  }
 }
