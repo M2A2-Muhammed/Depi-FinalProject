@@ -107,7 +107,7 @@ jobs:
             cat ~/.ssh/known_hosts
           fi
           
-          ssh -i ~/.ssh/${{ env.SSH_KEY_NAME }} ubuntu@${{ env.INSTANCE_IP }}
+          ssh-keyscan ${{ env.INSTANCE_IP }} >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
           cat ~/.ssh/known_hosts
 
