@@ -106,6 +106,7 @@ jobs:
             echo "known_hosts file already exists."
           fi
           cat ~/.ssh/known_hosts
+          ssh-keygen -R {{ env.INSTANCE_IP }}
           ssh -i ~/.ssh/${{ env.SSH_KEY_NAME }} ubuntu@${{ env.INSTANCE_IP }}
           chmod 644 ~/.ssh/known_hosts
           cat ~/.ssh/known_hosts
