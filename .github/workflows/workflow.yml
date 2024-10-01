@@ -52,19 +52,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-ssh-keys-
 
-      - name: Configure AWS Credentials
-        run: |
-          mkdir -p ~/.aws
-          echo "[default]" > ~/.aws/credentials
-          echo "aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID }}" >> ~/.aws/credentials
-          echo "aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> ~/.aws/credentials
-          chmod 600 ~/.aws/credentials
-
       - name: Terraform Init
         run: terraform init
       
       - name: Terraform Apply
         id: apply
+        env:
+          TF_VAR_aws_access_key_id: ${{ env.AWS_ACCESS_KEY_ID }}
+          TF_VAR_aws_secret_access_key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          TF_VAR_aws_region: ${{ env.AWS_REGION }}
         run: terraform apply -auto-approve
 
       - name: Get Instance IP
