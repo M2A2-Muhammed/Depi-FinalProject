@@ -89,7 +89,6 @@ jobs:
       - name: Set up SSH Key
         if: steps.cache_ssh.outputs.cache-hit != 'true'
         run: |
-          chmod 700 ~/.ssh
           cat ~/.ssh/${{ env.SSH_KEY_NAME }}.pub | tee -a ~/.ssh/authorized_keys
 
       - name: Cache Terraform State File
@@ -131,7 +130,6 @@ jobs:
       - name: Add ec2 to known hosts
         run: |
              touch ~/.ssh/known_hosts
-             chmod 600 ~/.ssh/known_hosts
              ssh-keyscan -H ${{ env.INSTANCE_IP }} >> ~/.ssh/known_hosts
 
       - name: Install Ansible
