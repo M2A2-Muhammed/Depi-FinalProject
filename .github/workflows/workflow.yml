@@ -67,19 +67,19 @@ jobs:
           terraform init
           terraform validate
           terraform apply -auto-approve
-          echo "INSTANCE_IP=$(terraform output -raw instance_ip)" >> $GITHUB_ENV
+      #    echo "INSTANCE_IP=$(terraform output -raw instance_ip)" >> $GITHUB_ENV
       
-      - name: Check Network Connectivity
-        run: |
-            ping -c 4 ${{ env.INSTANCE_IP }}
+      # - name: Check Network Connectivity
+      #   run: |
+      #       ping -c 4 ${{ env.INSTANCE_IP }}
 
-      - name: Add Host to known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ env.INSTANCE_IP }} > ~/.ssh/known_hosts
+      # - name: Add Host to known_hosts
+      #   run: |
+      #     mkdir -p ~/.ssh
+      #     ssh-keyscan -H ${{ env.INSTANCE_IP }} > ~/.ssh/known_hosts
 
-      - name: Run Ansible Playbook
-        run: |
-            cd ./ansible
-            ansible-playbook -i "${{ env.INSTANCE_IP }}," main.yml --user=ubuntu
+      # - name: Run Ansible Playbook
+      #   run: |
+      #       cd ./ansible
+      #       ansible-playbook -i "${{ env.INSTANCE_IP }}," main.yml --user=ubuntu
 
