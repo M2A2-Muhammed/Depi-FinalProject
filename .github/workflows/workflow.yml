@@ -8,8 +8,7 @@ env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_REGION: ${{ vars.AWS_REGION }}
-  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRV_KEY }}
-  SSH_PUBLIC_KEY: ${{ secrets.SSH_PUB_KEY }}
+  SSH_KEY_NAME: "github-actions-key"
 
 jobs:
   Deploy:
@@ -19,55 +18,80 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: download terraform
-        uses: actions/download-artifact@v4
+      - name: Cache Terraform
+        uses: actions/cache@v3
         with:
-          path: .
+          path: ~/.terraform.d/plugin-cache
+          key: ${{ runner.os }}-terraform-${{ hashFiles('**/*.tf') }}
+          restore-keys: |
+            ${{ runner.os }}-terraform-
 
-      - name: Create Files for SSH keys
-        run: |
-             echo "${{ env.SSH_PRIVATE_KEY }}" > id_aws_ec2
-             echo "${{ env.SSH_PUBLIC_KEY }}" > id_aws_ec2.pub
-
-             mkdir ~/.ssh/
-             cp ./id_aws_ec2 ./id_aws_ec2.pub ~/.ssh/
-             
-      - name: Set up AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Install Terraform
+      - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_wrapper: false
 
-      - name: Install SSH & Ansible
+      - name: Install SSH Client
+        run: sudo apt-get install -y openssh-client
+
+      - name: Generate SSH Key
         run: |
-          sudo apt-get update && sudo apt-get install -y openssh-server ansible      
+          ssh-keygen -t rsa -b 4096 -f ~/.ssh/${{ env.SSH_KEY_NAME }} -N "" || echo "SSH key already exists"
+
+      - name: Set up SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          cat ~/.ssh/${{ env.SSH_KEY_NAME }}.pub | tee -a ~/.ssh/authorized_keys
+
+      - name: Cache SSH Keys
+        uses: actions/cache@v3
+        with:
+          path: ~/.ssh/${{ env.SSH_KEY_NAME }}*
+          key: ${{ runner.os }}-ssh-keys-${{ hashFiles(format('~/.ssh/%s.pub', env.SSH_KEY_NAME)) }}
+          restore-keys: |
+            ${{ runner.os }}-ssh-keys-
+
+      - name: Configure AWS Credentials
+        run: |
+          mkdir -p ~/.aws
+          echo "[default]" > ~/.aws/credentials
+          echo "aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID }}" >> ~/.aws/credentials
+          echo "aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> ~/.aws/credentials
+          chmod 600 ~/.aws/credentials
 
       - name: Terraform Init
-        run: |
-          terraform init
+        run: terraform init
       
-      - name: Terraform Apply (manual approval)
-        run: |
-          terraform apply -var="aws_access_key_id=${{ env.AWS_ACCESS_KEY_ID }}" \
-                          -var="aws_secret_access_key=${{ env.AWS_SECRET_ACCESS_KEY }}" \
-                          -var="key_name_value=${{ env.SSH_PUBLIC_KEY }}" \
-                          -var="aws_region=${{ env.AWS_REGION }}" \
-                          -auto-approve
+      - name: Terraform Apply
+        id: apply
+        run: terraform apply -auto-approve
 
-      - name: Get Public IP
-        id: Deploy
+      - name: Get Instance IP
+        id: instance_ip
+        run: echo "INSTANCE_IP=$(terraform output -raw instance_ip)" >> $GITHUB_ENV
+
+      - name: Cache Terraform State
+        uses: actions/cache@v3
+        with:
+          path: .terraform/
+          key: ${{ runner.os }}-terraform-state-${{ hashFiles('**/*.tf') }}
+          restore-keys: |
+            ${{ runner.os }}-terraform-state-
+
+      - name: Cache Ansible Installation
+        uses: actions/cache@v3
+        with:
+          path: ~/.ansible
+          key: ${{ runner.os }}-ansible-${{ hashFiles('**/requirements.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-ansible-
+
+      - name: Install Ansible
         run: |
-            PUBLIC_IP=$(terraform output -raw public_ip)
-            echo "PUBLIC_IP=${PUBLIC_IP}" >> $GITHUB_ENV
-                  
-      - name: Run Ansible playbook
-        run: |
-              cd ./ansible
-              echo "[ec2_hosts]" > hosts
-              echo "ec2_host ansible_host=$PUBLIC_IP" >> hosts
-              cat hosts
-              ansible-playbook -i hosts main.yml
+          if [ ! -d ~/.ansible ]; then
+            sudo apt-get install -y ansible
+          fi
+
+      - name: Run Ansible Playbook
+        run: ansible-playbook -i "${{ env.INSTANCE_IP }}," main.yml --private-key ~/.ssh/${{ env.SSH_KEY_NAME }}

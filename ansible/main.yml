@@ -1,43 +1,96 @@
-# monitoring.yml
 ---
-- hosts: ec2_hosts
-  become: true
-  gather_facts: false
-
-  vars:
-    ec2_publicIP: "{{ lookup('env', 'EC2_PUBLIC_IP') }}"
-    ssh_private_key_path: "{{ lookup('env', 'SSH_PRIVATE_PATH') }}"
-
+- name: Install Prometheus and Grafana
+  hosts: all
+  become: yes
   tasks:
-    - name: Update package lists
+    - name: Update the package manager
       apt:
         update_cache: yes
+        upgrade: yes
 
-    - name: Install required packages
+    - name: Install required dependencies
       apt:
-        pkg:
-          - prometheus
-          - grafana
+        name:
+          - wget
+          - tar
+          - curl
         state: present
 
-    - name: Generate Prometheus configuration
-      template:
-        src: prometheus.yml.j2
-        dest: /etc/prometheus/prometheus.yml
-        mode: 0644
+    - name: Create Prometheus user
+      user:
+        name: prometheus
+        system: yes
+        shell: /sbin/nologin
 
-    - name: Start Prometheus service
-      service:
+    - name: Download and install Prometheus
+      block:
+        - name: Download Prometheus
+          get_url:
+            url: https://github.com/prometheus/prometheus/releases/latest/download/prometheus-2.36.0.linux-amd64.tar.gz
+            dest: /tmp/prometheus.tar.gz
+
+        - name: Extract Prometheus
+          unarchive:
+            src: /tmp/prometheus.tar.gz
+            dest: /usr/local/bin/
+            remote_src: yes
+
+        - name: Move Prometheus binary files
+          command: mv /usr/local/bin/prometheus-* /usr/local/bin/prometheus
+
+        - name: Create Prometheus configuration directory
+          file:
+            path: /etc/prometheus
+            state: directory
+
+        - name: Copy Prometheus configuration file
+          copy:
+            src: prometheus.yml
+            dest: /etc/prometheus/prometheus.yml
+
+        - name: Create Prometheus systemd service file
+          copy:
+            dest: /etc/systemd/system/prometheus.service
+            content: |
+              [Unit]
+              Description=Prometheus
+              After=network.target
+
+              [Service]
+              User=prometheus
+              ExecStart=/usr/local/bin/prometheus/prometheus \
+                --config.file=/etc/prometheus/prometheus.yml \
+                --storage.tsdb.path=/var/lib/prometheus/data
+
+              [Install]
+              WantedBy=multi-user.target
+
+    - name: Start and enable Prometheus
+      systemd:
         name: prometheus
         state: started
+        enabled: yes
 
-    - name: Configure Grafana
-      template:
-        src: grafana.ini
-        dest: /etc/grafana/grafana.ini
-        mode: 0644
+    - name: Install Grafana
+      block:
+        - name: Add Grafana APT repository
+          apt_repository:
+            repo: "deb https://packages.grafana.com/oss/release/deb stable main"
+            state: present
 
-    - name: Start Grafana service
-      service:
-        name: grafana-server
-        state: started
+        - name: Install Grafana
+          apt:
+            name: grafana
+            state: present
+
+        - name: Start and enable Grafana
+          systemd:
+            name: grafana-server
+            state: started
+            enabled: yes
+
+    - name: Open firewall for Prometheus and Grafana
+      ufw:
+        rule: allow
+        name: "Open HTTP"
+        state: enabled
