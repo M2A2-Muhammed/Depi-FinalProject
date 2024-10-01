@@ -7,7 +7,7 @@
   tasks:
     - name: Check network connectivity
       uri:
-        url: www.google.com
+        url: https://www.google.com
         return_content: no
       register: connectivity
       ignore_errors: yes
@@ -15,7 +15,7 @@
     - name: Fail if unable to connect to network
       fail:
         msg: "Cannot reach the Ubuntu repository. Check network settings."
-      when: connectivity is failed
+      when: connectivity is failed or connectivity.status != 200
 
     - name: Update the package manager
       apt:
