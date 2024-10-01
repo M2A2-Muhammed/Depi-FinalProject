@@ -19,17 +19,6 @@ provider "aws" {
   secret_key = var.aws_secret_access_key
 }
 
-# Data resource to fetch the most recent AMI
-data "aws_ami" "selected" {
-  most_recent = true
-
-  owners = ["amazon"] # Change this to your AMI owner if needed
-
-  filter {
-    name   = "name"
-    values = [var.ami] # Replace with your specific AMI name or pattern
-  }
-}
 
 
 resource "aws_key_pair" "github_actions" {
