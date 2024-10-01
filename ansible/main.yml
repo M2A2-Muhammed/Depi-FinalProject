@@ -99,4 +99,14 @@
             name: grafana
             state: present
 
-    - name: Start and enable Grafana
+        - name: Start and enable Grafana
+          systemd:
+            name: grafana-server
+            state: started
+            enabled: yes
+
+    - name: Open firewall for Prometheus and Grafana
+      ufw:
+        rule: allow
+        name: "Open HTTP"
+        state: enabled
