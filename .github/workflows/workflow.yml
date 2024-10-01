@@ -82,6 +82,16 @@ jobs:
         id: instance_ip
         run: echo "INSTANCE_IP=$(terraform output -raw instance_ip)" >> $GITHUB_ENV
 
+      - name: Add host to config
+        run: |
+          echo "Host ec2-instance
+                  HostName ${{ env.INSTANCE_IP }}
+                  User ubuntu
+                  IdentityFile ~/.ssh/${{ env.SSH_KEY_NAME }}" >> ~/.ssh/config
+
+      - name: Set permissions for SSH config
+        run: chmod 600 ~/.ssh/config
+
       - name: Cache Ansible Installation
         uses: actions/cache@v3
         with:
@@ -101,4 +111,4 @@ jobs:
       - name: Run Ansible Playbook
         run: |
             cd ./ansible
-            ansible-playbook -i "${{ env.INSTANCE_IP }}," main.yml --private-key ~/.ssh/${{ env.SSH_KEY_NAME }} --user ubuntu
+            ansible-playbook -i "ec2-instance," main.yml
