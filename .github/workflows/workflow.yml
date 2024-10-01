@@ -67,8 +67,8 @@ jobs:
         id: cache_ssh
         uses: actions/cache@v3
         with:
-          path: ~/.ssh/${{ env.SSH_KEY_NAME }}*
-          key: ${{ runner.os }}-ssh-keys-${{ hashFiles(format('~/.ssh/%s.pub', env.SSH_KEY_NAME)) }}
+          path: ~/.ssh
+          key: ${{ runner.os }}-ssh-keys-${{ hashFiles('~/.ssh/*') }}
           restore-keys: |
             ${{ runner.os }}-ssh-keys-
 
@@ -92,10 +92,10 @@ jobs:
           chmod 700 ~/.ssh
           cat ~/.ssh/${{ env.SSH_KEY_NAME }}.pub | tee -a ~/.ssh/authorized_keys
 
-          - name: List State Files
-          run: |
-            ls -la terraform.tfstate
-            ls -la
+      - name: List State Files
+        run: |
+          ls -la terraform.tfstate
+          ls -la
   
       - name: Cache Terraform State File
         id: cache_tf_state
