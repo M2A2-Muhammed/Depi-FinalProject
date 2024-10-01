@@ -55,6 +55,14 @@ jobs:
             echo "SSH client is already installed."
           fi
 
+      - name: Restore SSH cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.ssh
+          key: ${{ runner.os }}-ssh-${{ hashFiles('~/.ssh/*') }}
+          restore-keys: |
+            ${{ runner.os }}-ssh-
+
       - name: Create Files for SSH keys
         run: |
           echo "${{ env.SSH_PRIVATE_KEY }}" > ${{ env.SSH_KEY_NAME }}
