@@ -155,23 +155,23 @@ jobs:
                 ~/.ssh/known_hosts
           key: ${{ steps.restore-ssh-config-cache.outputs.cache-primary-key }}
 
-      # - name: Cache Ansible Installation
-      #   uses: actions/cache@v4
-      #   with:
-      #     path: ~/.ansible
-      #     key: ${{ runner.os }}-ansible-${{ hashFiles('**/requirements.yml') }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-ansible-
+      - name: Cache Ansible Installation
+        uses: actions/cache@v4
+        with:
+          path: ~/.ansible
+          key: ${{ runner.os }}-ansible-${{ hashFiles('**/requirements.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-ansible-
 
-      # - name: Install Ansible
-      #   run: |
-      #     if ! command -v ansible &> /dev/null; then
-      #       sudo apt-get install -y ansible
-      #     else
-      #       echo "Ansible is already installed."
-      #     fi
+      - name: Install Ansible
+        run: |
+          if ! command -v ansible &> /dev/null; then
+            sudo apt-get install -y ansible
+          else
+            echo "Ansible is already installed."
+          fi
 
-      # - name: Run Ansible Playbook
-      #   run: |
-      #       cd ./ansible
-      #       ansible-playbook -i "ec2-instance," main.yml
+      - name: Run Ansible Playbook
+        run: |
+            cd ./ansible
+            ansible-playbook -i "ec2-instance," main.yml
