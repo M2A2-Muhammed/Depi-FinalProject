@@ -21,7 +21,7 @@ provider "aws" {
 
 resource "aws_key_pair" "github_actions" {
   key_name   = "github-actions-key"
-  public_key = file(var.ssh_public_key)
+  public_key = var.ssh_public_key
 }
 
 # Create a VPC
