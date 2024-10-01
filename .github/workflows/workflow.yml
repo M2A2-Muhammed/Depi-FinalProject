@@ -96,13 +96,8 @@ jobs:
       - name: Add ec2 to known hosts
         run: |
              echo "${{ env.INSTANCE_IP }} $(cat ~/.ssh/${{ env.SSH_KEY_NAME }}.pub)" >> ~/.ssh/known_hosts
-
-      - name: Install Ansible
-        run: |
-          if [ ! -d ~/.ansible ]; then
-            sudo apt-get install -y ansible
-          fi
-
+             cat ~/.ssh/known_hosts
+             
       - name: Cache Ansible Installation
         uses: actions/cache@v3
         with:
@@ -110,6 +105,14 @@ jobs:
           key: ${{ runner.os }}-ansible-${{ hashFiles('**/requirements.yml') }}
           restore-keys: |
             ${{ runner.os }}-ansible-
+          
+      - name: Install Ansible
+        run: |
+          if [ ! -d ~/.ansible ]; then
+            sudo apt-get install -y ansible
+          fi
+
+      
 
                 
       - name: Run Ansible Playbook
