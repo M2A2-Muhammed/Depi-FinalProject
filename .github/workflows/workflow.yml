@@ -82,12 +82,6 @@ jobs:
         id: instance_ip
         run: echo "INSTANCE_IP=$(terraform output -raw instance_ip)" >> $GITHUB_ENV
 
-      - name: Add EC2 to Known Hosts
-        run: |
-          echo "INSTANCE_IP: ${{ env.INSTANCE_IP }}"
-          ssh-keyscan -H "${{ env.INSTANCE_IP }}" >> ~/.ssh/known_hosts || echo "Failed to add host key"          
-          cat ~/.ssh/known_hosts
-
       - name: Cache Ansible Installation
         uses: actions/cache@v3
         with:
