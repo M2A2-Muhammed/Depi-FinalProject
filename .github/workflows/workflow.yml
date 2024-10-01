@@ -71,7 +71,17 @@ jobs:
           key: ${{ runner.os }}-ssh-keys-${{ hashFiles('~/.ssh/github-actions-key.pub') }}
           restore-keys: |
             ${{ runner.os }}-ssh-keys-
-              
+      
+      - name: Check for Terraform State Cache
+        id: check_tf_cache
+        run: |
+          if [ -d .terraform ]; then
+            echo "Terraform state cache exists."
+            echo "tf_cache_exists=true" >> $GITHUB_ENV
+          else
+            echo "tf_cache_exists=false" >> $GITHUB_ENV
+          fi
+      
       - name: Terraform Init
         run: terraform init
       
@@ -86,16 +96,6 @@ jobs:
       - name: Get Instance IP
         id: instance_ip
         run: echo "INSTANCE_IP=$(terraform output -raw instance_ip)" >> $GITHUB_ENV
-
-      - name: Check for Terraform State Cache
-        id: check_tf_cache
-        run: |
-          if [ -d .terraform ]; then
-            echo "Terraform state cache exists."
-            echo "tf_cache_exists=true" >> $GITHUB_ENV
-          else
-            echo "tf_cache_exists=false" >> $GITHUB_ENV
-          fi
 
       - name: Cache Terraform State
         if: ${{ env.tf_cache_exists }} == 'false'
