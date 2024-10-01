@@ -121,4 +121,6 @@ jobs:
           fi
 
       - name: Run Ansible Playbook
-        run: ansible-playbook -i "${{ env.INSTANCE_IP }}," main.yml --private-key ~/.ssh/${{ env.SSH_KEY_NAME }}
+        run: |
+            cd ./ansible
+            ansible-playbook -i "${{ env.INSTANCE_IP }}," main.yml --private-key ~/.ssh/${{ env.SSH_KEY_NAME }}
