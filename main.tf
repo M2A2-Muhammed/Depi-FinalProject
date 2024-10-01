@@ -59,7 +59,7 @@ resource "aws_route_table_association" "public_association" {
 }
 
 # Create a security group to allow SSH and HTTP traffic
-resource "aws_security_group" "allow_ssh_http" {
+resource "aws_security_group" "allow_access" {
   vpc_id = aws_vpc.main.id
 
   ingress {
@@ -91,7 +91,7 @@ resource "aws_security_group" "allow_ssh_http" {
   }
 
   tags = {
-    Name = "allow ssh & http"
+    Name = "Allow SSH, Prometheus & Grafana"
   }
 }
 
@@ -112,8 +112,8 @@ resource "aws_instance" "web-server" {
   # User data to install OpenSSH server
   user_data = <<-EOF
               #!/bin/bash
-              yum update -y
-              yum install -y openssh-server
+              apt update -y
+              apt install -y openssh-server
               systemctl enable sshd
               systemctl start sshd
               EOF

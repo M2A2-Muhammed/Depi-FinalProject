@@ -67,7 +67,7 @@ jobs:
             ${{ runner.os }}-ssh-keys
 
       - name: Create Files for SSH keys
-        if: steps.cache-primes.outputs.cache-hit != 'true'
+        if: steps.restore-ssh-keys-cache.outputs.cache-hit != 'true'
         run: |
           echo "${{ env.SSH_PRIVATE_KEY }}" > ${{ env.SSH_KEY_NAME }}
           echo "${{ env.SSH_PUBLIC_KEY }}" > ${{ env.SSH_KEY_NAME }}.pub
@@ -78,6 +78,7 @@ jobs:
           chmod 600 ~/.ssh/${{ env.SSH_KEY_NAME }}
 
       - name: Save ssh keys to cache
+        if: steps.restore-ssh-keys-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: |
@@ -117,6 +118,7 @@ jobs:
             ${{ runner.os }}-ssh-config
 
       - name: Add host to config
+        if: steps.restore-ssh-config-cache.outputs.cache-hit != 'true'
         run: |
           echo "Host ec2-instance
                   HostName ${{ env.INSTANCE_IP }}
@@ -124,11 +126,13 @@ jobs:
                   IdentityFile ~/.ssh/${{ env.SSH_KEY_NAME }}" >> ~/.ssh/config
 
       - name: Set permissions for SSH config
+        if: steps.restore-ssh-config-cache.outputs.cache-hit != 'true'
         run: |
               chmod 600 ~/.ssh/config
               cat ~/.ssh/config
 
       - name: Add Host Key to known_hosts
+        if: steps.restore-ssh-config-cache.outputs.cache-hit != 'true'
         run: |
           if [ ! -f ~/.ssh/known_hosts ]; then
             touch ~/.ssh/known_hosts
@@ -143,6 +147,7 @@ jobs:
           cat ~/.ssh/known_hosts
 
       - name: Save ssh config to cache
+        if: steps.restore-ssh-config-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: |
