@@ -92,17 +92,6 @@ jobs:
           chmod 700 ~/.ssh
           cat ~/.ssh/${{ env.SSH_KEY_NAME }}.pub | tee -a ~/.ssh/authorized_keys
 
-      - name: Check for Terraform State File
-        id: check_tf_state_file
-        run: |
-          if [ -f terraform.tfstate ]; then
-            echo "Terraform state file exists."
-            echo "tf_state_file_exists=true" >> $GITHUB_ENV
-          else
-            echo "Terraform state file does not exist."
-            echo "tf_state_file_exists=false" >> $GITHUB_ENV
-          fi
-    
       - name: Terraform Init
         run: terraform init
       
@@ -112,17 +101,27 @@ jobs:
           TF_VAR_aws_access_key_id: ${{ env.AWS_ACCESS_KEY_ID }}
           TF_VAR_aws_secret_access_key: ${{ env.AWS_SECRET_ACCESS_KEY }}
           TF_VAR_aws_region: ${{ env.AWS_REGION }}
-        run: terraform apply -auto-approve
+        run: | 
+            terraform apply -auto-approve
+            ls -a
 
       - name: Get Instance IP
         id: instance_ip
         run: echo "INSTANCE_IP=$(terraform output -raw instance_ip)" >> $GITHUB_ENV
 
+      - name: List State Files
+        run: |
+          ls -la terraform.tfstate
+          ls -la terraform.tfstate.backup
+          ls -la
+
       - name: Cache Terraform State File
         id: cache_tf_state
         uses: actions/cache@v3
         with:
-          path: terraform.tfstate
+          path: | 
+                terraform.tfstate
+                terraform.tfstate.backup
           key: ${{ runner.os }}-terraform-state-${{ hashFiles('**/*.tf') }}
           restore-keys: |
             ${{ runner.os }}-terraform-state-
