@@ -117,9 +117,15 @@
             enabled: yes
 
     - name: Open firewall for Prometheus and Grafana
-      ufw:
-        rule: allow
-        port:
-          - "9090" # Default port for Prometheus
-          - "3000" # Default port for Grafana
-        state: enabled
+      block:
+        - name: Allow Prometheus port
+          ufw:
+            rule: allow
+            port: "9090"
+            state: enabled
+
+        - name: Allow Grafana port
+          ufw:
+            rule: allow
+            port: "3000"
+            state: enabled
