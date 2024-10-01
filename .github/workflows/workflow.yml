@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Cache Terraform
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.terraform.d/plugin-cache
           key: ${{ runner.os }}-terraform-${{ hashFiles('**/*.tf') }}
@@ -55,15 +55,19 @@ jobs:
             echo "SSH client is already installed."
           fi
 
-      - name: Restore SSH cache
-        uses: actions/cache@v3
+      - name: Restore SSH Keys cache
+        id: restore-ssh-keys-cache
+        uses: actions/cache/restore@v4
         with:
-          path: ~/.ssh
-          key: ${{ runner.os }}-ssh-${{ hashFiles('~/.ssh/*') }}
+          path: |
+                ~/.ssh/${{ env.SSH_KEY_NAME }}
+                ~/.ssh/${{ env.SSH_KEY_NAME }}.pub
+          key: ${{ runner.os }}-ssh-keys
           restore-keys: |
-            ${{ runner.os }}-ssh-
+            ${{ runner.os }}-ssh-keys
 
       - name: Create Files for SSH keys
+        if: steps.cache-primes.outputs.cache-hit != 'true'
         run: |
           echo "${{ env.SSH_PRIVATE_KEY }}" > ${{ env.SSH_KEY_NAME }}
           echo "${{ env.SSH_PUBLIC_KEY }}" > ${{ env.SSH_KEY_NAME }}.pub
@@ -72,6 +76,14 @@ jobs:
           mv ./${{ env.SSH_KEY_NAME }} ~/.ssh/
           mv ./${{ env.SSH_KEY_NAME }}.pub ~/.ssh/
           chmod 600 ~/.ssh/${{ env.SSH_KEY_NAME }}
+
+      - name: Save ssh keys to cache
+        uses: actions/cache/save@v4
+        with:
+          path: |
+             ~/.ssh/${{ env.SSH_KEY_NAME }}
+             ~/.ssh/${{ env.SSH_KEY_NAME }}.pub
+          key: ${{ steps.restore-ssh-keys-cache.outputs.cache-primary-key }}
 
       - name: Terraform Init
         run: terraform init
@@ -92,6 +104,17 @@ jobs:
       - name: Get Instance IP
         id: instance_ip
         run: echo "INSTANCE_IP=$(terraform output -raw instance_ip)" >> $GITHUB_ENV
+
+      - name: Restore SSH config and known_hosts cache
+        id: restore-ssh-config-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+                ~/.ssh/config
+                ~/.ssh/known_hosts
+          key: ${{ runner.os }}-ssh-config
+          restore-keys: |
+            ${{ runner.os }}-ssh-config
 
       - name: Add host to config
         run: |
@@ -119,8 +142,16 @@ jobs:
           chmod 644 ~/.ssh/known_hosts
           cat ~/.ssh/known_hosts
 
+      - name: Save ssh config to cache
+        uses: actions/cache/save@v4
+        with:
+          path: |
+               ~/.ssh/config
+                ~/.ssh/known_hosts
+          key: ${{ steps.restore-ssh-config-cache.outputs.cache-primary-key }}
+
       - name: Cache Ansible Installation
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.ansible
           key: ${{ runner.os }}-ansible-${{ hashFiles('**/requirements.yml') }}
