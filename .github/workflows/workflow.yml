@@ -63,7 +63,7 @@ jobs:
           mkdir -p ~/.ssh/
           mv ./${{ env.SSH_KEY_NAME }} ~/.ssh/
           mv ./${{ env.SSH_KEY_NAME }}.pub ~/.ssh/
-          chmod 600 ~/.ssh/${{ env.SSH_KEY_NAME }}
+          
 
       - name: Terraform Init
         run: terraform init
@@ -85,7 +85,7 @@ jobs:
       - name: Add EC2 to Known Hosts
         run: |
           echo "INSTANCE_IP: ${{ env.INSTANCE_IP }}"
-          ssh-keyscan -H "${{ env.INSTANCE_IP }}" -v > ~/.ssh/known_hosts 2>&1 || echo "Failed to add host key"
+          echo "${{ env.INSTANCE_IP }} ${{ env.SSH_PUBLIC_KEY }}" > ~/.ssh/known_hosts  || echo "Failed to add host key"
           cat ~/.ssh/known_hosts
 
       - name: Cache Ansible Installation
