@@ -2,11 +2,16 @@
 - name: Install Prometheus and Grafana
   hosts: all
   become: yes
+  gather_facts: false
+
   tasks:
+    - name: Check network connectivity
+      run: curl -I https://archive.ubuntu.com
+
     - name: Update the package manager
       apt:
         update_cache: yes
-        upgrade: yes
+        upgrade: dist
 
     - name: Install required dependencies
       apt:
