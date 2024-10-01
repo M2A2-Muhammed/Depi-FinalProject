@@ -93,7 +93,7 @@ jobs:
 
       - name: Add ec2 to known hosts
         run: |
-             ech "${{ env.INSTANCE_IP }} $(cat ~/.ssh/${{ env.SSH_KEY_NAME }}.pub)" >> ~/.ssh/known_hosts
+             echo "${{ env.INSTANCE_IP }} $(cat ~/.ssh/${{ env.SSH_KEY_NAME }}.pub)" >> ~/.ssh/known_hosts
 
       - name: Install Ansible
         run: |
