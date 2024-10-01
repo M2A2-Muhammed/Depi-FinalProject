@@ -5,6 +5,12 @@ terraform {
       version = "~> 4.0"
     }
   }
+
+  backend "s3" {
+    bucket = "depi-bucket"
+    key    = "terraform.tfstate"
+    region = var.aws_region
+  }
 }
 
 provider "aws" {

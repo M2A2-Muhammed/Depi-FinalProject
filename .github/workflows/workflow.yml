@@ -62,24 +62,6 @@ jobs:
             echo "SSH client is already installed."
           fi
 
-      
-      - name: Cache SSH Keys
-        id: cache_ssh
-        uses: actions/cache@v3
-        with:
-          path: ~/.ssh
-          key: ${{ runner.os }}-ssh-keys-${{ hashFiles('~/.ssh') }}
-          restore-keys: |
-            ${{ runner.os }}-ssh-keys-
-
-      - name: Check if cache was restored
-        run: |
-          if [[ "${{ steps.cache_ssh.outputs.cache-hit }}" == "true" ]]; then
-            echo "Cache was restored."
-          else
-            echo "Cache was not found."
-          fi
-
       - name: Generate SSH Key
         if: steps.cache_ssh.outputs.cache-hit != 'true'
         run: |
@@ -91,23 +73,6 @@ jobs:
         if: steps.cache_ssh.outputs.cache-hit != 'true'
         run: |
           cat ~/.ssh/${{ env.SSH_KEY_NAME }}.pub | tee -a ~/.ssh/authorized_keys
-
-      - name: Cache Terraform state file
-        id: cache_tf_state
-        uses: actions/cache@v3
-        with:
-          path: terraform.tfstate
-          key: ${{ runner.os }}-terraform-${{ hashFiles('terraform.tfstate') }}
-          restore-keys: |
-            ${{ runner.os }}-terraform-
-  
-      - name: Check if Cache was Restored
-        run: |
-          if [[ "${{ steps.cache_tf_state.outputs.cache-hit }}" == "true" ]]; then
-            echo "Cache was restored."
-          else
-            echo "Cache was not found."
-          fi
 
       - name: Terraform Init
         run: terraform init
