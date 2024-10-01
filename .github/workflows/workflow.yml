@@ -106,4 +106,4 @@ jobs:
       - name: Run Ansible Playbook
         run: |
             cd ./ansible
-            ansible-playbook -i "${{ env.INSTANCE_IP }}," main.yml --private-key ~/.ssh/${{ env.SSH_KEY_NAME }}
+            ansible-playbook -i "${{ env.INSTANCE_IP }}," main.yml --private-key ~/.ssh/${{ env.SSH_KEY_NAME }} --user $(terraform output -raw default_user)
