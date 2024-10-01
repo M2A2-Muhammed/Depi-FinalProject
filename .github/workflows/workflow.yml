@@ -26,10 +26,30 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-terraform-
 
+      - name: Check for Terraform Installation
+        id: check_terraform
+        run: |
+          if command -v terraform &> /dev/null; then
+            echo "Terraform is already installed."
+            echo "terraform_cache_exists=true" >> $GITHUB_ENV
+          else
+            echo "Terraform not found. Installing..."
+            echo "terraform_cache_exists=false" >> $GITHUB_ENV
+          fi
+
       - name: Setup Terraform
+        if: env.terraform_cache_exists == 'false'
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_wrapper: false
+
+      - name: Cache Terraform
+        uses: actions/cache@v3
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: ${{ runner.os }}-terraform-${{ hashFiles('**/*.tf') }}
+          restore-keys: |
+            ${{ runner.os }}-terraform-
 
       - name: Cache SSH Client Installation
         id: cache_ssh_client
@@ -53,7 +73,7 @@ jobs:
           fi
 
       - name: Generate SSH Key
-        if: ${{ env.ssh_cache_exists }} == 'false'
+        if: env.ssh_cache_exists == 'false'
         run: |
           ssh-keygen -t rsa -b 4096 -f ~/.ssh/github-actions-key -N "" || echo "SSH key already exists"
 
@@ -64,7 +84,7 @@ jobs:
           cat ~/.ssh/github-actions-key.pub | tee -a ~/.ssh/authorized_keys
 
       - name: Cache SSH Keys
-        if: ${{ env.ssh_cache_exists }} == 'false'
+        if: env.ssh_cache_exists == 'false'
         uses: actions/cache@v3
         with:
           path: ~/.ssh/github-actions-key*
@@ -98,7 +118,7 @@ jobs:
         run: echo "INSTANCE_IP=$(terraform output -raw instance_ip)" >> $GITHUB_ENV
 
       - name: Cache Terraform State
-        if: ${{ env.tf_cache_exists }} == 'false'
+        if:  env.tf_cache_exists == 'false'
         uses: actions/cache@v3
         with:
           path: .terraform/
