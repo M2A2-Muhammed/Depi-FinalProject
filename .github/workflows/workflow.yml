@@ -85,8 +85,7 @@ jobs:
       - name: Add EC2 to Known Hosts
         run: |
           echo "INSTANCE_IP: ${{ env.INSTANCE_IP }}"
-          echo "${{ env.INSTANCE_IP }} ${{ env.SSH_PUBLIC_KEY }}" >> ~/.ssh/known_hosts
-          
+          ssh-keyscan -H "${{ env.INSTANCE_IP }}" >> ~/.ssh/known_hosts || echo "Failed to add host key"          
           cat ~/.ssh/known_hosts
 
       - name: Cache Ansible Installation
