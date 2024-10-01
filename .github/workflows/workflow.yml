@@ -84,6 +84,7 @@ jobs:
 
       - name: Add EC2 to Known Hosts
         run: |
+          echo "INSTANCE_IP: ${{ env.INSTANCE_IP }}"
           ssh-keyscan -H "${{ env.INSTANCE_IP }}" > ~/.ssh/known_hosts
           cat ~/.ssh/known_hosts
 
