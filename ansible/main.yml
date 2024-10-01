@@ -7,7 +7,7 @@
   tasks:
     - name: Check network connectivity
       uri:
-        url: https://archive.ubuntu.com
+        url: www.google.com
         return_content: no
       register: connectivity
       ignore_errors: yes
