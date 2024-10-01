@@ -9,7 +9,7 @@ terraform {
   backend "s3" {
     bucket = "depi-bucket"
     key    = "terraform.tfstate"
-    region = var.aws_region
+    region = "us-east-1"
   }
 }
 
