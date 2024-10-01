@@ -65,30 +65,31 @@ jobs:
       - name: Check for SSH Key Cache
         id: check_ssh_cache
         run: |
-          if [ -f ~/.ssh/github-actions-key ]; then
+          if [ -f ~/.ssh/${{ env.SSH_KEY_NAME }} ]; then
             echo "SSH key cache exists."
             echo "ssh_cache_exists=true" >> $GITHUB_ENV
           else
+            echo "SSH key cache not exists."
             echo "ssh_cache_exists=false" >> $GITHUB_ENV
           fi
 
       - name: Generate SSH Key
         if: env.ssh_cache_exists == 'false'
         run: |
-          ssh-keygen -t rsa -b 4096 -f ~/.ssh/github-actions-key -N "" || echo "SSH key already exists"
+          ssh-keygen -t rsa -b 4096 -f ~/.ssh/${{ env.SSH_KEY_NAME }} -N "" || echo "SSH key already exists"
 
       - name: Set up SSH Key
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          cat ~/.ssh/github-actions-key.pub | tee -a ~/.ssh/authorized_keys
+          cat ~/.ssh/${{ env.SSH_KEY_NAME }}.pub | tee -a ~/.ssh/authorized_keys
 
       - name: Cache SSH Keys
         if: env.ssh_cache_exists == 'false'
         uses: actions/cache@v3
         with:
-          path: ~/.ssh/github-actions-key*
-          key: ${{ runner.os }}-ssh-keys-${{ hashFiles('~/.ssh/github-actions-key.pub') }}
+          path: ~/.ssh/${{ env.SSH_KEY_NAME }}*
+          key: ${{ runner.os }}-ssh-keys-${{ hashFiles(format('~/.ssh/%s.pub', env.SSH_KEY_NAME)) }}
           restore-keys: |
             ${{ runner.os }}-ssh-keys-
       
@@ -99,6 +100,7 @@ jobs:
             echo "Terraform state cache exists."
             echo "tf_cache_exists=true" >> $GITHUB_ENV
           else
+            echo "Terraform state cache not exists."
             echo "tf_cache_exists=false" >> $GITHUB_ENV
           fi
       
@@ -116,6 +118,9 @@ jobs:
       - name: Get Instance IP
         id: instance_ip
         run: echo "INSTANCE_IP=$(terraform output -raw instance_ip)" >> $GITHUB_ENV
+
+      - name: Add ec2 to known hosts
+        run: ssh-keyscan -H ${{ env.INSTANCE_IP }} >> ~/.ssh/known_hosts
 
       - name: Cache Terraform State
         if:  env.tf_cache_exists == 'false'
