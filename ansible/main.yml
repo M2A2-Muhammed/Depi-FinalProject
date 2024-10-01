@@ -119,5 +119,7 @@
     - name: Open firewall for Prometheus and Grafana
       ufw:
         rule: allow
-        name: "Open HTTP"
+        port:
+          - "9090" # Default port for Prometheus
+          - "3000" # Default port for Grafana
         state: enabled
