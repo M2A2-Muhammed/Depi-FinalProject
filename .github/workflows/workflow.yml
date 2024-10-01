@@ -119,8 +119,8 @@ jobs:
         uses: actions/cache@v3
         with:
           path: | 
-                terraform.tfstate
-          key: ${{ runner.os }}-terraform-state-${{ hashFiles('**/*.tf') }}
+                **/*.tfstate
+          key: ${{ runner.os }}-terraform-state-${{ hashFiles('**/*.tfstate') }}
           restore-keys: |
             ${{ runner.os }}-terraform-state-
 
@@ -133,7 +133,10 @@ jobs:
           fi
 
       - name: Add ec2 to known hosts
-        run: ssh-keyscan -H ${{ env.INSTANCE_IP }} >> ~/.ssh/known_hosts
+        run: |
+             touch ~/.ssh/known_hosts
+             chmod 600 ~/.ssh/known_hosts
+             ssh-keyscan -H ${{ env.INSTANCE_IP }} >> ~/.ssh/known_hosts
 
       - name: Install Ansible
         run: |
