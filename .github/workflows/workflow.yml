@@ -63,7 +63,7 @@ jobs:
           mkdir -p ~/.ssh/
           mv ./${{ env.SSH_KEY_NAME }} ~/.ssh/
           mv ./${{ env.SSH_KEY_NAME }}.pub ~/.ssh/
-          
+          chmod 600 ~/.ssh/${{ env.SSH_KEY_NAME }}
 
       - name: Terraform Init
         run: terraform init
