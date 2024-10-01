@@ -91,15 +91,14 @@ jobs:
         run: |
           cat ~/.ssh/${{ env.SSH_KEY_NAME }}.pub | tee -a ~/.ssh/authorized_keys
 
-      - name: Cache Terraform State File
+      - name: Cache Terraform state file
         id: cache_tf_state
         uses: actions/cache@v3
         with:
-          path: | 
-                **/*.tfstate
-          key: ${{ runner.os }}-terraform-state-${{ hashFiles('**/*.tfstate') }}
+          path: terraform.tfstate
+          key: ${{ runner.os }}-terraform-${{ hashFiles('terraform.tfstate') }}
           restore-keys: |
-            ${{ runner.os }}-terraform-state-
+            ${{ runner.os }}-terraform-
   
       - name: Check if Cache was Restored
         run: |
@@ -110,7 +109,6 @@ jobs:
           fi
 
       - name: Terraform Init
-        if: steps.cache_tf_state.outputs.cache-hit != 'true'
         run: terraform init
       
       - name: Terraform Apply
